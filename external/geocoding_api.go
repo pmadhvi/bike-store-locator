@@ -15,24 +15,24 @@ type GeocodeResponse struct {
 }
 type ResultList []Result
 
-type Result struct {
-	Geometry Geometry `json:"geometry"`
-}
+// type Result struct {
+// 	Geometry Geometry `json:"geometry"`
+// }
 
-type Geometry struct {
-	Location Location `json:"location"`
-}
+// type Geometry struct {
+// 	Location Location `json:"location"`
+// }
 
-type Location struct {
-	Latitude  float64 `json:"lat"`
-	Longitude float64 `json:"lng"`
-}
+// type Location struct {
+// 	Latitude  float64 `json:"lat"`
+// 	Longitude float64 `json:"lng"`
+// }
 
 const (
 	key = "XYZ"
 )
 
-func GeoCodingApi(location) (geocodeResp GeocodeResponse, err error) {
+func GeoCodingApi(location, region string) (geocodeResp GeocodeResponse, err error) {
 	log.Info("Inside GeoCoding api!!")
 	baseUrl, err := url.Parse("https://maps.googleapis.com/maps/api/geocode/json")
 	if err != nil {
@@ -41,6 +41,7 @@ func GeoCodingApi(location) (geocodeResp GeocodeResponse, err error) {
 	}
 	params := url.Values{}
 	params.Add("address", location)
+	params.Add("region", region)
 	params.Add("key", key)
 	baseUrl.RawQuery = params.Encode()
 
@@ -53,11 +54,10 @@ func GeoCodingApi(location) (geocodeResp GeocodeResponse, err error) {
 	//Defer the call to close the response body
 	defer resp.Body.Close()
 
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&geocodeResp)
+	err = json.NewDecoder(resp.Body).Decode(&geocodeResp)
 	if err != nil {
 		log.Errorf("Failed to decode the response with error: %s\n", err.Error())
 		return
 	}
-	return
+	return geocodeResp, nil
 }
