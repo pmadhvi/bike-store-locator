@@ -2,9 +2,9 @@ package main
 
 import (
 	"net/http"
-	""
-	log "github.com/sirupsen/logrus"
+
 	"github.com/pmadhvi/tech-test/bike-locator-api/router"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {

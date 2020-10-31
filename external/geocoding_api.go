@@ -2,6 +2,7 @@ package external
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -9,46 +10,53 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type GeocodeResponse struct {
-	Results ResultList `json:"results"`
-	Status  string     `json:"status"`
+type GeocodeRequest struct {
+	Address string `json:"address"`
+	Region  string `json:"status"`
 }
-type ResultList []Result
 
-// type Result struct {
-// 	Geometry Geometry `json:"geometry"`
-// }
+type GeocodeResponse struct {
+	GeocodeResults GeocodeResultList `json:"results"`
+	Status         string            `json:"status"`
+}
 
-// type Geometry struct {
-// 	Location Location `json:"location"`
-// }
+type GeocodeResultList []GeocodeResult
 
-// type Location struct {
-// 	Latitude  float64 `json:"lat"`
-// 	Longitude float64 `json:"lng"`
-// }
+type GeocodeResult struct {
+	FormattedAddress string   `json:"formatted_address"`
+	Geometry         Geometry `json:"geometry"`
+}
 
-const (
-	key = "XYZ"
-)
+type Geometry struct {
+	Location LocationLatLng `json:"location"`
+}
 
-func GeoCodingApi(location, region string) (geocodeResp GeocodeResponse, err error) {
+type LocationLatLng struct {
+	Latitude  float64 `json:"lat"`
+	Longitude float64 `json:"lng"`
+}
+
+func GeoCodingApi(req *GeocodeRequest) (geocodeResp *GeocodeResponse, err error) {
 	log.Info("Inside GeoCoding api!!")
+
+	if req.Address == "" {
+		return nil, errors.New("Address parameter missing")
+	}
 	baseUrl, err := url.Parse("https://maps.googleapis.com/maps/api/geocode/json")
 	if err != nil {
-		log.Errorf("Malformed URL: ", err.Error())
+		log.Errorf("Malformed URL:", err.Error())
 		return
 	}
 	params := url.Values{}
-	params.Add("address", location)
-	params.Add("region", region)
-	params.Add("key", key)
+	params.Set("address", req.Address)
+	params.Set("region", req.Region)
+	params.Set("key", ApiKey)
 	baseUrl.RawQuery = params.Encode()
 
 	fmt.Println("url :", baseUrl.String())
 	resp, err := http.Get(baseUrl.String())
 	if err != nil {
-		log.Errorf("Failed to get the geocode for location: %s with error: %s\n", location, err.Error())
+		log.Errorf("Failed to get the geocode for location: %s with error: %s\n", req.Address, err.Error())
 		return
 	}
 	//Defer the call to close the response body

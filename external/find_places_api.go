@@ -12,6 +12,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	ApiKey = "XYZ"
+)
+
 type FindPlaceFromTextRequest struct {
 	Input              string
 	InputType          string
@@ -23,8 +27,8 @@ type FindPlaceFromTextRequest struct {
 }
 
 type FindPlaceFromTextResponse struct {
-	Candidates PlaceList `json:"candidates"`
-	Status     string    `json:"status"`
+	Places PlaceList `json:"candidates"`
+	Status string    `json:"status"`
 }
 type PlaceList []Place
 
@@ -33,14 +37,14 @@ type Place struct {
 	Name             string `json:"name"`
 }
 
-func (req *FindPlaceFromTextRequest) FindPlaceApi() (placesResp FindPlaceFromTextResponse, err error) {
+func FindPlaceApi(req *FindPlaceFromTextRequest) (placesResp *FindPlaceFromTextResponse, err error) {
 	log.Info("Inside Find places api!!")
 	if req.Input == "" {
-		return errors.New("Input parameter missing")
+		return nil, errors.New("Input parameter missing")
 	}
 
 	if req.InputType == "" {
-		return errors.New("InputType parameter missing")
+		return nil, errors.New("InputType parameter missing")
 	}
 	baseUrl, err := url.Parse("https://maps.googleapis.com/maps/api/place/findplacefromtext/json")
 	if err != nil {
@@ -55,7 +59,7 @@ func (req *FindPlaceFromTextRequest) FindPlaceApi() (placesResp FindPlaceFromTex
 	}
 	latlng := strconv.FormatFloat(req.LocationBiasLat, 'f', -1, 64) + "," + strconv.FormatFloat(req.LocationBiasLng, 'f', -1, 64)
 	params.Set("locationbias", fmt.Sprintf("circle:%d@%s", req.LocationBiasRadius, latlng))
-	params.Set("key", key)
+	params.Set("key", ApiKey)
 	baseUrl.RawQuery = params.Encode()
 
 	fmt.Println("url :", baseUrl.String())
