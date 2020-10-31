@@ -36,11 +36,11 @@ type LocationLatLng struct {
 	Longitude float64 `json:"lng"`
 }
 
-func GeoCodingApi(req *GeocodeRequest) (geocodeResp *GeocodeResponse, err error) {
+func GeoCodingApi(req GeocodeRequest) (geocodeResp GeocodeResponse, err error) {
 	log.Info("Inside GeoCoding api!!")
 
 	if req.Address == "" {
-		return nil, errors.New("Address parameter missing")
+		return GeocodeResponse{}, errors.New("Address parameter missing")
 	}
 	baseUrl, err := url.Parse("https://maps.googleapis.com/maps/api/geocode/json")
 	if err != nil {

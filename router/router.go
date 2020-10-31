@@ -7,6 +7,6 @@ import (
 )
 
 func Router() {
-	http.HandleFunc("/bike-locator-api/healthz", handlers.HealthApi)
-	http.HandleFunc("/bike-locator-api/location/{location}/radius/{radius}", handlers.GetBikeStoresApi)
+	http.HandleFunc("/bike-locator-api/healthz", handlers.HealthAPI)
+	http.HandleFunc("/bike-locator-api/region/{region}/location/{location}/radius/{radius}", handlers.GetBikeStoresAPI)
 }

@@ -16,7 +16,7 @@ const (
 	ApiKey = "XYZ"
 )
 
-type FindPlaceFromTextRequest struct {
+type FindPlaceRequest struct {
 	Input              string
 	InputType          string
 	Fields             []string
@@ -26,7 +26,7 @@ type FindPlaceFromTextRequest struct {
 	LocationBiasLng    float64
 }
 
-type FindPlaceFromTextResponse struct {
+type FindPlaceResponse struct {
 	Places PlaceList `json:"candidates"`
 	Status string    `json:"status"`
 }
@@ -37,14 +37,14 @@ type Place struct {
 	Name             string `json:"name"`
 }
 
-func FindPlaceApi(req *FindPlaceFromTextRequest) (placesResp *FindPlaceFromTextResponse, err error) {
+func FindPlaceApi(req FindPlaceRequest) (placesResp FindPlaceResponse, err error) {
 	log.Info("Inside Find places api!!")
 	if req.Input == "" {
-		return nil, errors.New("Input parameter missing")
+		return FindPlaceResponse{}, errors.New("Input parameter missing")
 	}
 
 	if req.InputType == "" {
-		return nil, errors.New("InputType parameter missing")
+		return FindPlaceResponse{}, errors.New("InputType parameter missing")
 	}
 	baseUrl, err := url.Parse("https://maps.googleapis.com/maps/api/place/findplacefromtext/json")
 	if err != nil {
