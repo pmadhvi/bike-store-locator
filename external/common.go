@@ -17,13 +17,13 @@ func RunHTTP(url string) (resp *http.Response, err error) {
 	}
 	start := time.Now()
 	if resp, err = client.Get(url); err != nil {
-		log.Errorf("Request failed with error :\n", err.Error())
+		log.Error("Request failed with error\n", err.Error())
 		return
 	}
 	defer resp.Body.Close()
 
 	finish := time.Since(start)
-	log.Infof("The total time to serve the request from Google places api:  %d\n", finish.Seconds())
+	log.Infof("The total time to serve the request from Google places api:  %v\n", finish.Seconds())
 
 	// var result map[string]interface{}
 	// if err = json.NewDecoder(resp.Body).Decode(&result); err != nil {

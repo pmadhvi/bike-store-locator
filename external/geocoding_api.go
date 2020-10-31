@@ -39,11 +39,11 @@ func GeoCodingApi(req GeocodeRequest) (geocodeResp GeocodeResponse, err error) {
 	log.Info("Inside GeoCoding api!!")
 
 	if req.Address == "" {
-		return GeocodeResponse{}, errors.New("Address parameter missing")
+		return GeocodeResponse{Status: "INVALID_REQUEST"}, errors.New("Address parameter missing")
 	}
 	reqURL, err := url.Parse("https://maps.googleapis.com/maps/api/geocode/json")
 	if err != nil {
-		log.Errorf("Incorrect URL:", err.Error())
+		log.Error("Incorrect URL:\n", err.Error())
 		return
 	}
 
@@ -58,7 +58,7 @@ func GeoCodingApi(req GeocodeRequest) (geocodeResp GeocodeResponse, err error) {
 	var resp *http.Response
 
 	if resp, err = RunHTTP(reqURL.String()); err != nil {
-		log.Errorf("Failed to get the geocode for location: %s with error: %s\n", req.Address, err.Error())
+		log.Errorf("Failed to get the geocode for location: %s with error: %v\n", req.Address, err.Error())
 		return
 	}
 
@@ -66,7 +66,7 @@ func GeoCodingApi(req GeocodeRequest) (geocodeResp GeocodeResponse, err error) {
 	defer resp.Body.Close()
 
 	if err = json.NewDecoder(resp.Body).Decode(&geocodeResp); err != nil {
-		log.Errorf("Failed to decode the response with error: %s\n", err.Error())
+		log.Error("Failed to decode the response with error:\n", err.Error())
 		return
 	}
 

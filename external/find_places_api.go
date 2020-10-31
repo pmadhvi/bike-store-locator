@@ -44,7 +44,7 @@ func FindPlaceApi(req FindPlaceRequest) (findPlacesResp FindPlaceResponse, err e
 	}
 	reqURL, err := url.Parse("https://maps.googleapis.com/maps/api/place/findplacefromtext/json")
 	if err != nil {
-		log.Errorf("Incorrect URL:", err.Error())
+		log.Error("Incorrect URL:\n", err.Error())
 		return
 	}
 
@@ -63,7 +63,7 @@ func FindPlaceApi(req FindPlaceRequest) (findPlacesResp FindPlaceResponse, err e
 
 	var resp *http.Response
 	if resp, err = RunHTTP(reqURL.String()); err != nil {
-		log.Errorf("Failed to get places with error: %s with error: %s\n", err.Error())
+		log.Error("Failed to get places with error:\n", err.Error())
 		return
 	}
 
@@ -71,7 +71,7 @@ func FindPlaceApi(req FindPlaceRequest) (findPlacesResp FindPlaceResponse, err e
 	defer resp.Body.Close()
 
 	if err = json.NewDecoder(resp.Body).Decode(&findPlacesResp); err != nil {
-		log.Errorf("Failed to decode the response with error: %s\n", err.Error())
+		log.Error("Failed to decode the response with error:\n", err.Error())
 		return
 	}
 
