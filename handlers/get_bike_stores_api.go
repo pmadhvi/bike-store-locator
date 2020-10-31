@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 //GetBikeStoresAPI returns the list of bike stores(name and address) for location sergeltorg and with radius of 2km.
 func GetBikeStoresAPI(res http.ResponseWriter, req *http.Request) {
 	log.Info("Inside Bike store locator Api!!")
+
 	location := req.URL.Query().Get("location")
 	radius, err := strconv.Atoi(req.URL.Query().Get("radius"))
 	if err != nil {
@@ -19,21 +21,22 @@ func GetBikeStoresAPI(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	region := req.URL.Query().Get("region")
-	var (
-		geocodeResponse external.GeocodeResponse
-		storesResponse  external.FindPlaceResponse
-	)
 
 	geocodeRequest := external.GeocodeRequest{
 		Address: location,
 		Region:  region,
 	}
 
-	geocodeResponse, err = external.GeoCodingApi(geocodeRequest)
-	if err != nil {
-		log.Error("Failed to get the geocode for location: %s and error is: \n", location, err.Error())
+	var (
+		geocodeResponse external.GeocodeResponse
+		storesResponse  external.FindPlaceResponse
+	)
+
+	if geocodeResponse, err = external.GeoCodingApi(geocodeRequest); err != nil {
+		log.Error("Error: \n", err.Error())
 		return
 	}
+	//TODO: Remove print later or convert it to log.
 	fmt.Println("geocodeResponse::", geocodeResponse)
 
 	//TODO: Format the response back to models.Geocode
@@ -48,12 +51,15 @@ func GetBikeStoresAPI(res http.ResponseWriter, req *http.Request) {
 		LocationBiasLat: -122.222641,
 		LocationBiasLng: 47.6918452,
 	}
-	storesResponse, err = external.FindPlaceApi(findPlaceRequest)
-	if err != nil {
+
+	if storesResponse, err = external.FindPlaceApi(findPlaceRequest); err != nil {
 		log.Error("Failed to get the bike stores and error is:\n", err.Error())
 		return
 	}
+
+	//TODO: Remove print later or convert it to log.
 	fmt.Println("storesResponse::", storesResponse)
+
 	// //TODO: Format the response back to models.BikeStore
 
 	// for _, store := range storesResponse {
@@ -61,8 +67,10 @@ func GetBikeStoresAPI(res http.ResponseWriter, req *http.Request) {
 	// }
 
 	//TODO: return the response back
-	// res.WriteHeader(200)
-	// res.Header().Set("Content-Type", "application/json")
+	payload, _ := json.Marshal(storesResponse)
+
+	res.Header().Set("Content-Type", "application/json")
+	res.Write([]byte(payload))
 
 	return
 }

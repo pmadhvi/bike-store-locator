@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"io"
 	"net/http"
 )
 
@@ -9,5 +8,5 @@ import (
 func HealthAPI(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(200)
-	io.WriteString(res, `{"alive": true}`)
+	res.Write([]byte("Application server is up and running!"))
 }

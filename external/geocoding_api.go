@@ -3,7 +3,6 @@ package external
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -42,30 +41,38 @@ func GeoCodingApi(req GeocodeRequest) (geocodeResp GeocodeResponse, err error) {
 	if req.Address == "" {
 		return GeocodeResponse{}, errors.New("Address parameter missing")
 	}
-	baseUrl, err := url.Parse("https://maps.googleapis.com/maps/api/geocode/json")
+	reqURL, err := url.Parse("https://maps.googleapis.com/maps/api/geocode/json")
 	if err != nil {
-		log.Errorf("Malformed URL:", err.Error())
+		log.Errorf("Incorrect URL:", err.Error())
 		return
 	}
+
 	params := url.Values{}
 	params.Set("address", req.Address)
 	params.Set("region", req.Region)
 	params.Set("key", ApiKey)
-	baseUrl.RawQuery = params.Encode()
+	reqURL.RawQuery = params.Encode()
 
-	fmt.Println("url :", baseUrl.String())
-	resp, err := http.Get(baseUrl.String())
-	if err != nil {
+	log.Infof("Request URL: %s", reqURL.String())
+
+	var resp *http.Response
+
+	if resp, err = RunHTTP(reqURL.String()); err != nil {
 		log.Errorf("Failed to get the geocode for location: %s with error: %s\n", req.Address, err.Error())
 		return
 	}
+
 	//Defer the call to close the response body
 	defer resp.Body.Close()
 
-	err = json.NewDecoder(resp.Body).Decode(&geocodeResp)
-	if err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(&geocodeResp); err != nil {
 		log.Errorf("Failed to decode the response with error: %s\n", err.Error())
 		return
 	}
-	return geocodeResp, nil
+
+	if geocodeResp.Status != "OK" {
+		log.Errorf("Failed to get the geocode for location: %s with status: %s\n", req.Address, geocodeResp.Status)
+		return
+	}
+	return
 }
