@@ -11,6 +11,11 @@ const (
 	ApiKey = "XYZ"
 )
 
+type Consumer struct {
+	Host string
+	Path string
+}
+
 func RunHTTP(url string) (resp *http.Response, err error) {
 	client := http.Client{
 		Timeout: time.Duration(5 * time.Second),
@@ -20,10 +25,9 @@ func RunHTTP(url string) (resp *http.Response, err error) {
 		log.Error("Request failed with error\n", err.Error())
 		return
 	}
-	defer resp.Body.Close()
 
 	finish := time.Since(start)
-	log.Infof("The total time to serve the request from Google places api:  %v\n", finish.Seconds())
+	log.Infof("The total time to serve the request from Google places api: %v", finish.Seconds())
 
 	// var result map[string]interface{}
 	// if err = json.NewDecoder(resp.Body).Decode(&result); err != nil {

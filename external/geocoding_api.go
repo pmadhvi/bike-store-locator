@@ -3,6 +3,7 @@ package external
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -35,13 +36,15 @@ type LocationLatLng struct {
 	Longitude float64 `json:"lng"`
 }
 
-func GeoCodingApi(req GeocodeRequest) (geocodeResp GeocodeResponse, err error) {
+func (c Consumer) GeoCodingApi(req GeocodeRequest) (geocodeResp GeocodeResponse, err error) {
 	log.Info("Inside GeoCoding api!!")
 
 	if req.Address == "" {
 		return GeocodeResponse{Status: "INVALID_REQUEST"}, errors.New("Address parameter missing")
 	}
-	reqURL, err := url.Parse("https://maps.googleapis.com/maps/api/geocode/json")
+	reqURL := c.Host + c.Path
+
+	parsedReqURL, err := url.Parse(reqURL)
 	if err != nil {
 		log.Error("Incorrect URL:\n", err.Error())
 		return
@@ -51,13 +54,13 @@ func GeoCodingApi(req GeocodeRequest) (geocodeResp GeocodeResponse, err error) {
 	params.Set("address", req.Address)
 	params.Set("region", req.Region)
 	params.Set("key", ApiKey)
-	reqURL.RawQuery = params.Encode()
+	parsedReqURL.RawQuery = params.Encode()
 
-	log.Infof("Request URL: %s", reqURL.String())
+	log.Infof("Request URL: %s", parsedReqURL.String())
 
 	var resp *http.Response
 
-	if resp, err = RunHTTP(reqURL.String()); err != nil {
+	if resp, err = RunHTTP(parsedReqURL.String()); err != nil {
 		log.Errorf("Failed to get the geocode for location: %s with error: %v\n", req.Address, err.Error())
 		return
 	}
@@ -70,8 +73,14 @@ func GeoCodingApi(req GeocodeRequest) (geocodeResp GeocodeResponse, err error) {
 		return
 	}
 
-	if geocodeResp.Status != "OK" {
-		log.Errorf("Failed to get the geocode for location: %s with status: %s\n", req.Address, geocodeResp.Status)
+	fmt.Println("geocodeResp-->", geocodeResp)
+	if geocodeResp.Status != "OK" && geocodeResp.Status != "ZERO_RESULTS" {
+		log.Errorf("Failed to get the geocode for location: %s with status: %s", req.Address, geocodeResp.Status)
+		return
+	}
+
+	if geocodeResp.Status == "ZERO_RESULTS" {
+		log.Infof("The geocode request was successful, but returned no results, due to a non-existent address")
 		return
 	}
 	return

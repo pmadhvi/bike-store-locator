@@ -33,7 +33,7 @@ type Place struct {
 	Name             string `json:"name"`
 }
 
-func FindPlaceApi(req FindPlaceRequest) (findPlacesResp FindPlaceResponse, err error) {
+func (c Consumer) FindPlaceApi(req FindPlaceRequest) (findPlacesResp FindPlaceResponse, err error) {
 	log.Info("Inside Find places api!!")
 	if req.Input == "" {
 		return FindPlaceResponse{Status: "INVALID_REQUEST"}, errors.New("Input parameter missing")
@@ -42,7 +42,9 @@ func FindPlaceApi(req FindPlaceRequest) (findPlacesResp FindPlaceResponse, err e
 	if req.InputType == "" {
 		return FindPlaceResponse{Status: "INVALID_REQUEST"}, errors.New("InputType parameter missing")
 	}
-	reqURL, err := url.Parse("https://maps.googleapis.com/maps/api/place/findplacefromtext/json")
+	reqURL := c.Host + c.Path
+
+	parsedReqURL, err := url.Parse(reqURL)
 	if err != nil {
 		log.Error("Incorrect URL:\n", err.Error())
 		return
@@ -57,12 +59,12 @@ func FindPlaceApi(req FindPlaceRequest) (findPlacesResp FindPlaceResponse, err e
 	latlng := strconv.FormatFloat(req.LocationBiasLat, 'f', -1, 64) + "," + strconv.FormatFloat(req.LocationBiasLng, 'f', -1, 64)
 	params.Set("locationbias", fmt.Sprintf("circle:%d@%s", req.LocationBiasRadius, latlng))
 	params.Set("key", ApiKey)
-	reqURL.RawQuery = params.Encode()
+	parsedReqURL.RawQuery = params.Encode()
 
-	log.Infof("Request URL: %s", reqURL.String())
+	log.Infof("Request URL: %s", parsedReqURL.String())
 
 	var resp *http.Response
-	if resp, err = RunHTTP(reqURL.String()); err != nil {
+	if resp, err = RunHTTP(parsedReqURL.String()); err != nil {
 		log.Error("Failed to get places with error:\n", err.Error())
 		return
 	}
@@ -75,8 +77,13 @@ func FindPlaceApi(req FindPlaceRequest) (findPlacesResp FindPlaceResponse, err e
 		return
 	}
 
-	if findPlacesResp.Status != "OK" {
-		log.Errorf("Failed to get places with with status: %s\n", findPlacesResp.Status)
+	if findPlacesResp.Status != "OK" && findPlacesResp.Status != "ZERO_RESULTS" {
+		log.Errorf("Failed to get places with with status: %s", findPlacesResp.Status)
+		return
+	}
+
+	if findPlacesResp.Status == "ZERO_RESULTS" {
+		log.Infof("The findPlaces request was successful, but returned no results, due to a non-existent address")
 		return
 	}
 
