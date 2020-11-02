@@ -1,130 +1,124 @@
 package external_test
 
 import (
-	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"testing"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/pmadhvi/tech-test/bike-locator-api/external"
+	log "github.com/sirupsen/logrus"
 )
 
-//Setup the test suite for testing Geocoding Api external request
-func TestGeoCodingApi(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Gecoding Suite")
-}
+var _ = Describe("GecodingApi ", func() {
+	var (
+		geocodeReq GeocodeRequest
+		consumer   Consumer
+		server     *httptest.Server
+	)
 
-var _ = Describe("External", func() {
+	BeforeEach(func() {
+		//Setting up the geocodemock server in order to test the GeoCodingApi
+		server = geocodingMockServer()
 
-	Describe("GeoCodingApi", func() {
+		//Consumer takes in actual or test host, here host is localhost, so that the test does not hit the real google places server.
+		consumer = Consumer{Host: server.URL, Path: "/maps/api/geocode/json"}
 
-		// BeforeEach(func() {
+		//Pass in the parameters to GeocodeRequest struct.
+		geocodeReq.Address = "Toledo"
+		geocodeReq.APIKey = "XYZ123"
+	})
 
-		// })
-		// AfterEach(func() {
+	AfterEach(func() {
+		server.Close()
+	})
 
-		// })
-		It("Get geocode for a location and a region", func() {
-			srv := geocodingMockServer()
-			defer srv.Close()
-			consumer := Consumer{Host: srv.URL, Path: "/maps/api/geocode/json"}
-			var geocodeReq GeocodeRequest
-			var geocodeResponse GeocodeResponse
-			geocodeReq.Address = "Toledo"
-			geocodeReq.Region = "es"
-			geocodeResponse, err := consumer.GeoCodingApi(geocodeReq)
+	It("Get geocode for a location and a region", func() {
+		//Adding region parameter to request
+		geocodeReq.Region = "es"
 
-			fmt.Println("geocoderesp from test::", geocodeResponse)
+		//GeoCodingApi being called to test the response.
+		geocodeResp, err := consumer.GeoCodingApi(geocodeReq)
 
-			Expect(err).To(BeNil())
-			Expect(geocodeResponse.Status).To(Equal("OK"))
+		//Checking the expected response
+		Expect(err).To(BeNil())
+		Expect(geocodeResp.Status).To(Equal("OK"))
+		Expect(geocodeResp.GeocodeResults[0].Geometry.Location.Longitude).To(Equal(-4.027323099999999))
+		Expect(geocodeResp.GeocodeResults[0].Geometry.Location.Latitude).To(Equal(39.8628316))
+	})
 
-			// resp := external.GeocodeResponse{
-			// 	GeocodeResults: []GeocodeResult{
-			// 		FormattedAddress: "Toledo, Spain",
-			// 		Geometry: Geometry{
-			// 			Location: LocationLatLng{Latitude: 39.8628316, Latitude: -4.027323099999999},
-			// 		},
-			// 	},
-			// 	Status: "OK",
-			// }
-			// Expect(geocodeResponse).To(Equal(resp))
-		})
+	It("Get geocode for a location only", func() {
+		//GeoCodingApi being called to test the response.
+		geocodeResp, err := consumer.GeoCodingApi(geocodeReq)
 
+		//Checking the expected response
+		Expect(err).To(BeNil())
+		Expect(geocodeResp.Status).To(Equal("OK"))
+		Expect(geocodeResp.GeocodeResults[0].Geometry.Location.Longitude).To(Equal(-4.027323099999999))
+		Expect(geocodeResp.GeocodeResults[0].Geometry.Location.Latitude).To(Equal(39.8628316))
+	})
+
+	It("Get geocode for an empty location", func() {
+		//Override address parameter
+		geocodeReq.Address = ""
+
+		//GeoCodingApi being called to test the response.
+		geocodeResp, err := consumer.GeoCodingApi(geocodeReq)
+
+		//Checking the expected response
+		Expect(err).ToNot(BeNil())
+		Expect(geocodeResp).To(BeNil())
+	})
+
+	It("Get geocode for missing APIKey", func() {
+		//Override APIKey parameter
+		geocodeReq.APIKey = ""
+
+		//GeoCodingApi being called to test the response.
+		geocodeResp, err := consumer.GeoCodingApi(geocodeReq)
+
+		//Checking the expected response
+		Expect(err).ToNot(BeNil())
+		Expect(geocodeResp).To(BeNil())
+	})
+
+	It("Get geocode for an incorrect url", func() {
+		//Overriding the consumer with incorrect url
+		consumer = Consumer{Host: server.URL, Path: "/maps/api/"}
+
+		//GeoCodingApi being called to test the response.
+		geocodeResp, err := consumer.GeoCodingApi(geocodeReq)
+
+		//Checking the expected response
+		Expect(err).ToNot(BeNil())
+		Expect(geocodeResp).To(BeNil())
 	})
 })
 
 func geocodingMockServer() *httptest.Server {
-	handler := http.NewServeMux()
-	handler.HandleFunc("/maps/api/geocode/json", getGeocodeMockApi)
-
-	srv := httptest.NewServer(handler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/maps/api/geocode/json", geocodeMockApi)
+	mux.HandleFunc("/maps/api/", geocodeMockApiIncorrectURL)
+	srv := httptest.NewServer(mux)
 
 	return srv
 }
 
-func getGeocodeMockApi(w http.ResponseWriter, r *http.Request) {
-	response := `{
-		"results" : [
-			 {
-					"address_components" : [
-						 {
-								"long_name" : "Toledo",
-								"short_name" : "Toledo",
-								"types" : [ "locality", "political" ]
-						 },
-						 {
-								"long_name" : "Toledo",
-								"short_name" : "TO",
-								"types" : [ "administrative_area_level_2", "political" ]
-						 },
-						 {
-								"long_name" : "Castile-La Mancha",
-								"short_name" : "CM",
-								"types" : [ "administrative_area_level_1", "political" ]
-						 },
-						 {
-								"long_name" : "Spain",
-								"short_name" : "ES",
-								"types" : [ "country", "political" ]
-						 }
-					],
-					"formatted_address" : "Toledo, Spain",
-					"geometry" : {
-						 "bounds" : {
-								"northeast" : {
-									 "lat" : 39.88605099999999,
-									 "lng" : -3.9192423
-								},
-								"southwest" : {
-									 "lat" : 39.8383676,
-									 "lng" : -4.0796176
-								}
-						 },
-						 "location" : {
-								"lat" : 39.8628316,
-								"lng" : -4.027323099999999
-						 },
-						 "location_type" : "APPROXIMATE",
-						 "viewport" : {
-								"northeast" : {
-									 "lat" : 39.88605099999999,
-									 "lng" : -3.9192423
-								},
-								"southwest" : {
-									 "lat" : 39.8383676,
-									 "lng" : -4.0796176
-								}
-						 }
-					},
-					"place_id" : "ChIJ8f21C60Lag0R_q11auhbf8Y",
-					"types" : [ "locality", "political" ]
-			 }
-		],
-		"status" : "OK"
- }`
-	_, _ = w.Write([]byte(response))
+func geocodeMockApi(res http.ResponseWriter, r *http.Request) {
+	file, err := os.Open("../testdata/geocode_response.json")
+	if err != nil {
+		log.Errorf("Unable to open file: %v", err.Error())
+	}
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Errorf("Unable to read the file content: %v", err.Error())
+	}
+	res.Write(bytes)
+}
+
+func geocodeMockApiIncorrectURL(res http.ResponseWriter, r *http.Request) {
+	res.WriteHeader(http.StatusNotFound)
+	res.Write([]byte("URL not found"))
 }

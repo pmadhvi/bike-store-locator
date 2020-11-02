@@ -2,8 +2,8 @@ package external
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,6 +15,7 @@ import (
 type FindPlaceRequest struct {
 	Input              string
 	InputType          string
+	APIKey             string
 	Fields             []string
 	LocationBiasType   string
 	LocationBiasRadius int
@@ -33,23 +34,39 @@ type Place struct {
 	Name             string `json:"name"`
 }
 
-func (c Consumer) FindPlaceApi(req FindPlaceRequest) (findPlacesResp FindPlaceResponse, err error) {
-	log.Info("Inside Find places api!!")
+//FindPlacesApi as a method with Consumer as receiver and FindPlaceRequest as parameter and returns response of type FindPlaceResponse and err of type error.
+func (c Consumer) FindPlacesApi(req FindPlaceRequest) (findPlacesResp *FindPlaceResponse, err error) {
+	//Validating required request parametersand APIKey.
 	if req.Input == "" {
-		return FindPlaceResponse{Status: "INVALID_REQUEST"}, errors.New("Input parameter missing")
+		log.Error("Input request parameter missing")
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Input request parameter missing")
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
 	if req.InputType == "" {
-		return FindPlaceResponse{Status: "INVALID_REQUEST"}, errors.New("InputType parameter missing")
+		log.Error("InputType request parameter missing")
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "InputType request parameter missing")
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
+
+	if req.APIKey == "" {
+		log.Error("APIKey is missing")
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "APIKey is missing")
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
+	}
+
+	//Composing reqURL from Host and Path of Consumer struct.
 	reqURL := c.Host + c.Path
 
+	//Parsing the reqURL to convert it to type *url.Url and checking for error if any.
 	parsedReqURL, err := url.Parse(reqURL)
 	if err != nil {
-		log.Error("Incorrect URL:\n", err.Error())
-		return
+		log.Error("Incorrect URL:", err.Error())
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Incorrect URL")
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
+	//Adding request params to url and encoding it.
 	params := url.Values{}
 	params.Set("input", req.Input)
 	params.Set("inputtype", req.InputType)
@@ -58,27 +75,49 @@ func (c Consumer) FindPlaceApi(req FindPlaceRequest) (findPlacesResp FindPlaceRe
 	}
 	latlng := strconv.FormatFloat(req.LocationBiasLat, 'f', -1, 64) + "," + strconv.FormatFloat(req.LocationBiasLng, 'f', -1, 64)
 	params.Set("locationbias", fmt.Sprintf("circle:%d@%s", req.LocationBiasRadius, latlng))
-	params.Set("key", ApiKey)
+	params.Set("key", req.APIKey)
 	parsedReqURL.RawQuery = params.Encode()
 
 	log.Infof("Request URL: %s", parsedReqURL.String())
 
 	var resp *http.Response
-	if resp, err = RunHTTP(parsedReqURL.String()); err != nil {
-		log.Error("Failed to get places with error:\n", err.Error())
-		return
+	//RunHTTP performs the http.Get under the hood and get's the response from server.
+	resp, err = RunHTTP(parsedReqURL.String())
+	if err != nil {
+		log.Errorf("Failed to get places with error => %v\n", err.Error())
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
-	//Defer the call to close the response body
+	//Defer the call to close the response body at the end of function execution.
 	defer resp.Body.Close()
 
-	if err = json.NewDecoder(resp.Body).Decode(&findPlacesResp); err != nil {
-		log.Error("Failed to decode the response with error:\n", err.Error())
-		return
+	//Read the response body into memory
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("Failed to read the response body with error => %v\n", err.Error())
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
+	if resp.StatusCode == 404 {
+		err = fmt.Errorf("status_code: %d and error_message: %s", resp.StatusCode, string(respBody))
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
+	}
+
+	if resp.StatusCode >= 400 {
+		err = fmt.Errorf("status_code: %d and error_message: %s", resp.StatusCode, string(respBody))
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
+	}
+
+	//Decoding the response body to a type GeocodeResponse for further processing.
+	err = json.Unmarshal(respBody, &findPlacesResp)
+	if err != nil {
+		log.Error("Failed to unmarshal the response body with error =>", err.Error())
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
+	}
+
+	//Check if the findPlacesResp.Status is other than "OK" or "ZERO_RESULTS", then the request failed and so log the error message and return
 	if findPlacesResp.Status != "OK" && findPlacesResp.Status != "ZERO_RESULTS" {
-		log.Errorf("Failed to get places with with status: %s", findPlacesResp.Status)
+		log.Errorf("Failed to get places with with status: %v", findPlacesResp.Status)
 		return
 	}
 

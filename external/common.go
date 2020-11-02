@@ -1,19 +1,21 @@
 package external
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	ApiKey = "XYZ"
-)
-
 type Consumer struct {
 	Host string
 	Path string
+}
+
+type AppError struct {
+	Operation string
+	Err       error
 }
 
 func RunHTTP(url string) (resp *http.Response, err error) {
@@ -35,6 +37,10 @@ func RunHTTP(url string) (resp *http.Response, err error) {
 	// 	return
 	// }
 	return
+}
+
+func (e AppError) Error() string {
+	return fmt.Sprintf("Error in %v with error details => %+v ", e.Operation, e.Err.Error())
 }
 
 // func CheckError(err Error, message string) {
