@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var _ = Describe("FindPlacesApi", func() {
+var _ = Describe("FindPlacesAPI", func() {
 	var (
 		findPlaceReq FindPlaceRequest
 		consumer     Consumer
@@ -20,7 +20,7 @@ var _ = Describe("FindPlacesApi", func() {
 	)
 
 	BeforeEach(func() {
-		//Setting up the geocodemock server in order to test the FindPlacesApi
+		//Setting up the geocodemock server in order to test the FindPlacesAPI
 		server = findPlacesMockServer()
 
 		//Consumer takes in actual or test host, here host is localhost, so that the test does not hit the real google places server.
@@ -42,13 +42,13 @@ var _ = Describe("FindPlacesApi", func() {
 	})
 
 	It("Gets the list of places", func() {
-		//FindPlacesApi being called to test the response.
-		findPlaceResp, err := consumer.FindPlacesApi(findPlaceReq)
+		//FindPlacesAPI being called to test the response.
+		findPlaceResp, err := consumer.FindPlacesAPI(findPlaceReq)
 
 		//Checking the expected response
 		Expect(err).To(BeNil())
 		Expect(findPlaceResp.Status).To(Equal("OK"))
-		Expect(findPlaceResp.Places[0].FormattedAddress).To(Equal("Toledo, Spain"))
+		Expect(findPlaceResp.Places[0].Address).To(Equal("Toledo, Spain"))
 		Expect(findPlaceResp.Places[0].Name).To(Equal("Museum of Contemporary Art Australia"))
 	})
 
@@ -56,8 +56,8 @@ var _ = Describe("FindPlacesApi", func() {
 		//Override input parameter
 		findPlaceReq.Input = ""
 
-		//FindPlacesApi being called to test the response.
-		findPlaceResp, err := consumer.FindPlacesApi(findPlaceReq)
+		//FindPlacesAPI being called to test the response.
+		findPlaceResp, err := consumer.FindPlacesAPI(findPlaceReq)
 
 		//Checking the expected response
 		Expect(err).ToNot(BeNil())
@@ -68,8 +68,8 @@ var _ = Describe("FindPlacesApi", func() {
 		//Override inputType parameter
 		findPlaceReq.InputType = ""
 
-		//FindPlacesApi being called to test the response.
-		findPlaceResp, err := consumer.FindPlacesApi(findPlaceReq)
+		//FindPlacesAPI being called to test the response.
+		findPlaceResp, err := consumer.FindPlacesAPI(findPlaceReq)
 
 		//Checking the expected response
 		Expect(err).ToNot(BeNil())
@@ -80,8 +80,8 @@ var _ = Describe("FindPlacesApi", func() {
 		//Override APIKey parameter
 		findPlaceReq.APIKey = ""
 
-		//FindPlacesApi being called to test the response.
-		findPlaceResp, err := consumer.FindPlacesApi(findPlaceReq)
+		//FindPlacesAPI being called to test the response.
+		findPlaceResp, err := consumer.FindPlacesAPI(findPlaceReq)
 
 		//Checking the expected response
 		Expect(err).ToNot(BeNil())
@@ -92,8 +92,8 @@ var _ = Describe("FindPlacesApi", func() {
 		//Overriding the consumer with incorrect url
 		consumer = Consumer{Host: server.URL, Path: "/maps/api/places/"}
 
-		//FindPlacesApi being called to test the response.
-		findPlaceResp, err := consumer.FindPlacesApi(findPlaceReq)
+		//FindPlacesAPI being called to test the response.
+		findPlaceResp, err := consumer.FindPlacesAPI(findPlaceReq)
 
 		//Checking the expected response
 		Expect(err).ToNot(BeNil())

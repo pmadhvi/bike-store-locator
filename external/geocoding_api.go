@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/pmadhvi/tech-test/bike-locator-api/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,35 +24,39 @@ type GeocodeResponse struct {
 	Status         string            `json:"status"`
 }
 
+//GeocodeResultList is a slice of GeocodeResult
 type GeocodeResultList []GeocodeResult
 
+//GeocodeResult struct
 type GeocodeResult struct {
 	FormattedAddress string   `json:"formatted_address"`
 	Geometry         Geometry `json:"geometry"`
 }
 
+//Geometry struct
 type Geometry struct {
 	Location LocationLatLng `json:"location"`
 }
 
+//LocationLatLng struct with lat and lng
 type LocationLatLng struct {
 	Latitude  float64 `json:"lat"`
 	Longitude float64 `json:"lng"`
 }
 
-//GeoCodingApi as a method with Consumer as receiver and GeocodeRequest as parameter and returns response of type GeocodeResponse and err of type error.
-func (c Consumer) GeoCodingApi(req GeocodeRequest) (geocodeResp *GeocodeResponse, err error) {
+//GeoCodingAPI as a method with Consumer as receiver and GeocodeRequest as parameter and returns response of type models.Geocode and err of type error.
+func (c Consumer) GeoCodingAPI(req GeocodeRequest) (geocode *models.Geocode, err error) {
 	//Validating required request parameter and APIKey.
 	if req.Address == "" {
 		log.Error("Address request parameter missing")
 		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Address request parameter missing")
-		return nil, AppError{Operation: "GeoCodingApi", Err: err}
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
 
 	if req.APIKey == "" {
 		log.Error("APIKey is missing")
 		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "APIKey is missing")
-		return nil, AppError{Operation: "GeoCodingApi", Err: err}
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
 
 	//Composing reqURL from Host and Path of Consumer struct.
@@ -62,7 +67,7 @@ func (c Consumer) GeoCodingApi(req GeocodeRequest) (geocodeResp *GeocodeResponse
 	if err != nil {
 		log.Error("Incorrect URL:", err.Error())
 		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Incorrect URL")
-		return nil, AppError{Operation: "GeoCodingApi", Err: err}
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
 
 	//Adding request params to url and encoding it.
@@ -79,7 +84,7 @@ func (c Consumer) GeoCodingApi(req GeocodeRequest) (geocodeResp *GeocodeResponse
 	resp, err = RunHTTP(parsedReqURL.String())
 	if err != nil {
 		log.Errorf("Failed to get the geocode for location: %s with error => %v\n", req.Address, err.Error())
-		return nil, AppError{Operation: "GeoCodingApi", Err: err}
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
 
 	//Defer the call to close the response body at the end of function execution.
@@ -89,36 +94,48 @@ func (c Consumer) GeoCodingApi(req GeocodeRequest) (geocodeResp *GeocodeResponse
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Errorf("Failed to read the response body with error => %v\n", err.Error())
-		return nil, AppError{Operation: "GeoCodingApi", Err: err}
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
 
 	if resp.StatusCode == 404 {
 		err = fmt.Errorf("status_code: %d and error_message: %s", resp.StatusCode, string(respBody))
-		return nil, AppError{Operation: "GeoCodingApi", Err: err}
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
 
 	if resp.StatusCode >= 400 {
 		err = fmt.Errorf("status_code: %d and error_message: %s", resp.StatusCode, string(respBody))
-		return nil, AppError{Operation: "GeoCodingApi", Err: err}
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
 
 	//Decoding the response body to a type GeocodeResponse for further processing.
+	var geocodeResp GeocodeResponse
 	err = json.Unmarshal(respBody, &geocodeResp)
 	if err != nil {
 		log.Error("Failed to unmarshal the response body with error =>", err.Error())
-		return nil, AppError{Operation: "GeoCodingApi", Err: err}
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
 
 	//Check if the geocodeResp.Status is other than "OK" or "ZERO_RESULTS", then the request failed and so log the error message and return
 	if geocodeResp.Status != "OK" && geocodeResp.Status != "ZERO_RESULTS" {
 		log.Errorf("Failed to get the geocode for location: %s with status: %v\n", req.Address, geocodeResp.Status)
-		return
+		message := "Failed to get the geocode for location"
+		err = fmt.Errorf("GeocodeResponse status_code: %v and error_message: %v", geocodeResp.Status, message)
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
 
 	if geocodeResp.Status == "ZERO_RESULTS" {
-		log.Info("The geocode request was successful, but returned no results, due to a non-existent address")
-		return
+		message := "The request was successful, but returned no results, due to a non-existent address"
+		log.Info(message)
+		err = fmt.Errorf("GeocodeResponse status_code: %v and message: %v", geocodeResp.Status, message)
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
 
+	//Considering only first result, discarding rest of it.
+	if len(geocodeResp.GeocodeResults) >= 1 {
+		geocode = &models.Geocode{
+			Latitude:  geocodeResp.GeocodeResults[0].Geometry.Location.Latitude,
+			Longitude: geocodeResp.GeocodeResults[0].Geometry.Location.Longitude,
+		}
+	}
 	return
 }

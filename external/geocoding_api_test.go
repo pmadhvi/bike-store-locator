@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var _ = Describe("GecodingApi ", func() {
+var _ = Describe("GeoCodingAPI ", func() {
 	var (
 		geocodeReq GeocodeRequest
 		consumer   Consumer
@@ -39,33 +39,31 @@ var _ = Describe("GecodingApi ", func() {
 		//Adding region parameter to request
 		geocodeReq.Region = "es"
 
-		//GeoCodingApi being called to test the response.
-		geocodeResp, err := consumer.GeoCodingApi(geocodeReq)
+		//GeoCodingAPI being called to test the response.
+		geocodeResp, err := consumer.GeoCodingAPI(geocodeReq)
 
 		//Checking the expected response
 		Expect(err).To(BeNil())
-		Expect(geocodeResp.Status).To(Equal("OK"))
-		Expect(geocodeResp.GeocodeResults[0].Geometry.Location.Longitude).To(Equal(-4.027323099999999))
-		Expect(geocodeResp.GeocodeResults[0].Geometry.Location.Latitude).To(Equal(39.8628316))
+		Expect(geocodeResp.Longitude).To(Equal(-4.027323099999999))
+		Expect(geocodeResp.Latitude).To(Equal(39.8628316))
 	})
 
 	It("Get geocode for a location only", func() {
-		//GeoCodingApi being called to test the response.
-		geocodeResp, err := consumer.GeoCodingApi(geocodeReq)
+		//GeoCodingAPI being called to test the response.
+		geocodeResp, err := consumer.GeoCodingAPI(geocodeReq)
 
 		//Checking the expected response
 		Expect(err).To(BeNil())
-		Expect(geocodeResp.Status).To(Equal("OK"))
-		Expect(geocodeResp.GeocodeResults[0].Geometry.Location.Longitude).To(Equal(-4.027323099999999))
-		Expect(geocodeResp.GeocodeResults[0].Geometry.Location.Latitude).To(Equal(39.8628316))
+		Expect(geocodeResp.Longitude).To(Equal(-4.027323099999999))
+		Expect(geocodeResp.Latitude).To(Equal(39.8628316))
 	})
 
 	It("Get geocode for an empty location", func() {
 		//Override address parameter
 		geocodeReq.Address = ""
 
-		//GeoCodingApi being called to test the response.
-		geocodeResp, err := consumer.GeoCodingApi(geocodeReq)
+		//GeoCodingAPI being called to test the response.
+		geocodeResp, err := consumer.GeoCodingAPI(geocodeReq)
 
 		//Checking the expected response
 		Expect(err).ToNot(BeNil())
@@ -76,8 +74,8 @@ var _ = Describe("GecodingApi ", func() {
 		//Override APIKey parameter
 		geocodeReq.APIKey = ""
 
-		//GeoCodingApi being called to test the response.
-		geocodeResp, err := consumer.GeoCodingApi(geocodeReq)
+		//GeoCodingAPI being called to test the response.
+		geocodeResp, err := consumer.GeoCodingAPI(geocodeReq)
 
 		//Checking the expected response
 		Expect(err).ToNot(BeNil())
@@ -88,8 +86,8 @@ var _ = Describe("GecodingApi ", func() {
 		//Overriding the consumer with incorrect url
 		consumer = Consumer{Host: server.URL, Path: "/maps/api/"}
 
-		//GeoCodingApi being called to test the response.
-		geocodeResp, err := consumer.GeoCodingApi(geocodeReq)
+		//GeoCodingAPI being called to test the response.
+		geocodeResp, err := consumer.GeoCodingAPI(geocodeReq)
 
 		//Checking the expected response
 		Expect(err).ToNot(BeNil())

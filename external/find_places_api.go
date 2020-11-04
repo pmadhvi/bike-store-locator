@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//FindPlaceRequest request parameters.
 type FindPlaceRequest struct {
 	Input              string
 	InputType          string
@@ -23,19 +24,23 @@ type FindPlaceRequest struct {
 	LocationBiasLng    float64
 }
 
+//FindPlaceResponse response structure.
 type FindPlaceResponse struct {
 	Places PlaceList `json:"candidates"`
 	Status string    `json:"status"`
 }
+
+//PlaceList is slice of Place
 type PlaceList []Place
 
+//Place structure
 type Place struct {
-	FormattedAddress string `json:"formatted_address"`
-	Name             string `json:"name"`
+	Address string `json:"formatted_address"`
+	Name    string `json:"name"`
 }
 
-//FindPlacesApi as a method with Consumer as receiver and FindPlaceRequest as parameter and returns response of type FindPlaceResponse and err of type error.
-func (c Consumer) FindPlacesApi(req FindPlaceRequest) (findPlacesResp *FindPlaceResponse, err error) {
+//FindPlacesAPI as a method with Consumer as receiver and FindPlaceRequest as parameter and returns response of type FindPlaceResponse and err of type error.
+func (c Consumer) FindPlacesAPI(req FindPlaceRequest) (findPlacesResp *FindPlaceResponse, err error) {
 	//Validating required request parametersand APIKey.
 	if req.Input == "" {
 		log.Error("Input request parameter missing")
