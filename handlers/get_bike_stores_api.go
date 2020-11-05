@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/pmadhvi/tech-test/bike-locator-api/external"
@@ -14,11 +13,13 @@ import (
 
 //APIKey for google api
 const (
-	apiKey        = "XYZ123"
-	googleHost    = "https://maps.googleapis.com"
-	localHost     = "http://127.0.0.1"
-	geocodePath   = "/maps/api/geocode/json"
-	findPlacePath = "/maps/api/place/findplacefromtext/json"
+	apiKey         = "XYZ123"
+	query          = "bicycle_store near Sergeltorg"
+	placeType      = "bicycle_store"
+	googleHost     = "https://maps.googleapis.com"
+	localHost      = "http://127.0.0.1"
+	textSearchPath = "/maps/api/place/textsearch/json"
+	region         = "se"
 )
 
 //GetBikeStoresAPI returns the list of bike stores(name and address) for location sergeltorg and with radius of 2km.
@@ -27,13 +28,7 @@ func GetBikeStoresAPI(req *http.Request) (bikeStores models.BikeStores, err erro
 	params := mux.Vars(req)
 	//TODO: remove this print
 	fmt.Println("params =>", params)
-	location := params["location"]
-	region := params["region"]
-	radius, err := strconv.Atoi(params["radius"])
-	if err != nil {
-		log.Error("Failed to convert string to integer with error: ", err.Error())
-		return
-	}
+	radius := params["radius"]
 
 	//This is needed just for testing, else test will hit the actual google api
 	var googleAPIHost string
@@ -44,17 +39,8 @@ func GetBikeStoresAPI(req *http.Request) (bikeStores models.BikeStores, err erro
 		googleAPIHost = localHost
 	}
 
-	//Get the geocode for location and region
-	geocodeResponse, err := getGeocodes(googleAPIHost, location, region)
-	if err != nil {
-		log.Error(err.Error())
-		return
-	}
-	//TODO: Remove print later or convert it to log.
-	fmt.Println("geocodeResponse in bike locator::", geocodeResponse)
-
 	//Get the list of bikes stores
-	storesResponse, err := findPlaces(googleAPIHost, location, radius, geocodeResponse.Latitude, geocodeResponse.Longitude)
+	storesResponse, err := findBikeStores(googleAPIHost, radius)
 	if err != nil {
 		log.Error(err.Error())
 		return
@@ -64,44 +50,21 @@ func GetBikeStoresAPI(req *http.Request) (bikeStores models.BikeStores, err erro
 	return
 }
 
-//getGeocodes returns geocode for a location and region
-func getGeocodes(googleAPIHost, location, region string) (geocode *models.Geocode, err error) {
-	//Geocode request parameters
-	geocodeRequest := external.GeocodeRequest{
-		Address: location,
-		APIKey:  apiKey,
-		Region:  region,
-	}
-
-	//Defining geocode consumer with Host and Path
-	geocodeConsumer := external.Consumer{Host: googleAPIHost, Path: geocodePath}
-
-	//Calling the external GeoCodingAPI which inturns calls google api to get geocode
-	geocode, err = geocodeConsumer.GeoCodingAPI(geocodeRequest)
-	if err != nil {
-		return
-	}
-	return
-}
-
-//findPlaces returns list of places
-func findPlaces(googleAPIHost, location string, radius int, lat, lng float64) (storesResp models.BikeStores, err error) {
-	//findPlaceRequest request parameters
-	findPlaceRequest := external.FindPlaceRequest{
-		Input:              location,
-		InputType:          "textquery",
-		APIKey:             apiKey,
-		Fields:             []string{"name, formatted_address"},
-		LocationBiasType:   "circle",
-		LocationBiasRadius: radius,
-		LocationBiasLat:    lat,
-		LocationBiasLng:    lng,
+//findBikeStores returns list of places
+func findBikeStores(googleAPIHost, radius string) (storesResp models.BikeStores, err error) {
+	//textSearchRequest request parameters
+	textSearchRequest := external.TextSearchRequest{
+		Query:     query,
+		APIKey:    apiKey,
+		Radius:    radius,
+		Region:    region,
+		PlaceType: placeType,
 	}
 
 	// Defining geocode consumer with Host and Path
-	findPlaceConsumer := external.Consumer{Host: googleAPIHost, Path: findPlacePath}
+	textSearchConsumer := external.Consumer{Host: googleAPIHost, Path: textSearchPath}
 
-	storesResp, err = findPlaceConsumer.FindPlacesAPI(findPlaceRequest)
+	storesResp, err = textSearchConsumer.TextSearchAPI(textSearchRequest)
 	if err != nil {
 		return
 	}

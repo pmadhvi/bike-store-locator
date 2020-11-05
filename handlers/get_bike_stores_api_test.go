@@ -36,6 +36,7 @@ func TestGetBikeStoresAPI(t *testing.T) {
 	})
 }
 
+//Mock handler for GetBikeStoresHandler
 func getBikeStoresMockhandler() *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data, err := readResponse("../testdata/bike_stores_response.json")
@@ -48,8 +49,8 @@ func getBikeStoresMockhandler() *httptest.Server {
 	return server
 }
 
+//readResponse reads the data from filepath
 func readResponse(filepath string) (data []byte, err error) {
-	// filepath: "../testdata/findplaces_response.json"
 	file, err := os.Open(filepath)
 	if err != nil {
 		fmt.Errorf("Unable to open file: %v", err.Error())
@@ -62,10 +63,11 @@ func readResponse(filepath string) (data []byte, err error) {
 	return
 }
 
-func getBikeRequest(region string, location string, radius string) *http.Request {
-	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/bike-locator-api/region/%s/location/%s/radius/%s", region, location, radius), nil)
+//getBikeRequest helps to create a request url with radius
+func getBikeRequest(radius string) *http.Request {
+	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/bikestoresapi/radius/%s", radius), nil)
 
 	//Since gorilla mux is being used for serving the request, that's why we need to set the request params in test using mux.SetURLVars, else request params will be not set and mux.Vars(req) returns map[].
-	req = mux.SetURLVars(req, map[string]string{"region": region, "location": location, "radius": radius})
+	req = mux.SetURLVars(req, map[string]string{"radius": radius})
 	return req
 }
