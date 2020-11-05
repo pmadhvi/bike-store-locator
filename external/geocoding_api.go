@@ -3,61 +3,139 @@ package external
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
+	"github.com/pmadhvi/tech-test/bike-locator-api/models"
 	log "github.com/sirupsen/logrus"
 )
 
+//GeocodeRequest request params structure.
+type GeocodeRequest struct {
+	Address string `json:"address"`
+	Region  string `json:"status"`
+	APIKey  string
+}
+
+//GeocodeResponse response structure.
 type GeocodeResponse struct {
-	Results ResultList `json:"results"`
-	Status  string     `json:"status"`
-}
-type ResultList []Result
-
-type Result struct {
-	Geometry Geometry `json:"geometry"`
+	GeocodeResults GeocodeResultList `json:"results"`
+	Status         string            `json:"status"`
 }
 
+//GeocodeResultList is a slice of GeocodeResult
+type GeocodeResultList []GeocodeResult
+
+//GeocodeResult struct
+type GeocodeResult struct {
+	FormattedAddress string   `json:"formatted_address"`
+	Geometry         Geometry `json:"geometry"`
+}
+
+//Geometry struct
 type Geometry struct {
-	Location Location `json:"location"`
+	Location LocationLatLng `json:"location"`
 }
 
-type Location struct {
+//LocationLatLng struct with lat and lng
+type LocationLatLng struct {
 	Latitude  float64 `json:"lat"`
 	Longitude float64 `json:"lng"`
 }
 
-const (
-	key = "XYZ"
-)
-
-func GeoCodingApi(location) (geocodeResp GeocodeResponse, err error) {
-	log.Info("Inside GeoCoding api!!")
-	baseUrl, err := url.Parse("https://maps.googleapis.com/maps/api/geocode/json")
-	if err != nil {
-		log.Errorf("Malformed URL: ", err.Error())
-		return
+//GeoCodingAPI as a method with Consumer as receiver and GeocodeRequest as parameter and returns response of type models.Geocode and err of type error.
+func (c Consumer) GeoCodingAPI(req GeocodeRequest) (geocode *models.Geocode, err error) {
+	//Validating required request parameter and APIKey.
+	if req.Address == "" {
+		log.Error("Address request parameter missing")
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Address request parameter missing")
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
+
+	if req.APIKey == "" {
+		log.Error("APIKey is missing")
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "APIKey is missing")
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+
+	//Composing reqURL from Host and Path of Consumer struct.
+	reqURL := c.Host + c.Path
+
+	//Parsing the reqURL to convert it to type *url.Url and checking for error if any.
+	parsedReqURL, err := url.Parse(reqURL)
+	if err != nil {
+		log.Error("Incorrect URL:", err.Error())
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Incorrect URL")
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+
+	//Adding request params to url and encoding it.
 	params := url.Values{}
-	params.Add("address", location)
-	params.Add("key", key)
-	baseUrl.RawQuery = params.Encode()
+	params.Set("address", req.Address)
+	params.Set("region", req.Region)
+	params.Set("key", req.APIKey)
+	parsedReqURL.RawQuery = params.Encode()
 
-	fmt.Println("url :", baseUrl.String())
-	resp, err := http.Get(baseUrl.String())
+	log.Infof("Request URL: %s", parsedReqURL.String())
+
+	var resp *http.Response
+	//RunHTTP performs the http.Get under the hood and get's the response from server.
+	resp, err = RunHTTP(parsedReqURL.String())
 	if err != nil {
-		log.Errorf("Failed to get the geocode for location: %s with error: %s\n", location, err.Error())
-		return
+		log.Errorf("Failed to get the geocode for location: %s with error => %v\n", req.Address, err.Error())
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
 	}
-	//Defer the call to close the response body
+
+	//Defer the call to close the response body at the end of function execution.
 	defer resp.Body.Close()
 
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&geocodeResp)
+	//Read the response body into memory
+	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Errorf("Failed to decode the response with error: %s\n", err.Error())
-		return
+		log.Errorf("Failed to read the response body with error => %v\n", err.Error())
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+
+	if resp.StatusCode == 404 {
+		err = fmt.Errorf("status_code: %d and error_message: %s", resp.StatusCode, string(respBody))
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+
+	if resp.StatusCode >= 400 {
+		err = fmt.Errorf("status_code: %d and error_message: %s", resp.StatusCode, string(respBody))
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+
+	//Decoding the response body to a type GeocodeResponse for further processing.
+	var geocodeResp GeocodeResponse
+	err = json.Unmarshal(respBody, &geocodeResp)
+	if err != nil {
+		log.Error("Failed to unmarshal the response body with error =>", err.Error())
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+
+	//Check if the geocodeResp.Status is other than "OK" or "ZERO_RESULTS", then the request failed and so log the error message and return
+	if geocodeResp.Status != "OK" && geocodeResp.Status != "ZERO_RESULTS" {
+		log.Errorf("Failed to get the geocode for location: %s with status: %v\n", req.Address, geocodeResp.Status)
+		message := "Failed to get the geocode for location"
+		err = fmt.Errorf("GeocodeResponse status_code: %v and error_message: %v", geocodeResp.Status, message)
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+
+	if geocodeResp.Status == "ZERO_RESULTS" {
+		message := "The request was successful, but returned no results, due to a non-existent address"
+		log.Info(message)
+		err = fmt.Errorf("GeocodeResponse status_code: %v and message: %v", geocodeResp.Status, message)
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+
+	//Considering only first result, discarding rest of it.
+	if len(geocodeResp.GeocodeResults) >= 1 {
+		geocode = &models.Geocode{
+			Latitude:  geocodeResp.GeocodeResults[0].Geometry.Location.Latitude,
+			Longitude: geocodeResp.GeocodeResults[0].Geometry.Location.Longitude,
+		}
 	}
 	return
 }

@@ -1,12 +1,15 @@
 package router
 
 import (
-	"net/http"
-
+	"github.com/gorilla/mux"
 	"github.com/pmadhvi/tech-test/bike-locator-api/handlers"
 )
 
-func Router() {
-	http.HandleFunc("/bike-locator-api/healthz", handlers.HealthApi)
-	http.HandleFunc("/bike-locator-api/location/{location}/radius/{radius}", handlers.GetBikeStoresApi)
+//Router define handlers based on path
+func Router() *mux.Router {
+	router := mux.NewRouter()
+	router.HandleFunc("/bikestoresapi/health", handlers.HealthHandler)
+	router.HandleFunc("/bikestoresapi/region/{region}/location/{location}/radius/{radius}", handlers.GetBikeStoresHandler)
+	router.HandleFunc("/", handlers.NotFoundHandler)
+	return router
 }
