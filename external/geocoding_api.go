@@ -46,42 +46,22 @@ type LocationLatLng struct {
 
 //GeoCodingAPI as a method with Consumer as receiver and GeocodeRequest as parameter and returns response of type models.Geocode and err of type error.
 func (c Consumer) GeoCodingAPI(req GeocodeRequest) (geocode *models.Geocode, err error) {
-	//Validating required request parameter and APIKey.
-	if req.Address == "" {
-		log.Error("Address request parameter missing")
-		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Address request parameter missing")
-		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
-	}
 
-	if req.APIKey == "" {
-		log.Error("APIKey is missing")
-		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "APIKey is missing")
-		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+	//Validating required request parameter and APIKey.
+	err = validateGeocodeInputParams(req)
+	if err != nil {
+		return nil, err
 	}
 
 	//Composing reqURL from Host and Path of Consumer struct.
-	reqURL := c.Host + c.Path
-
-	//Parsing the reqURL to convert it to type *url.Url and checking for error if any.
-	parsedReqURL, err := url.Parse(reqURL)
+	reqURL, err := c.composeGeocodeReqURL(req)
 	if err != nil {
-		log.Error("Incorrect URL:", err.Error())
-		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Incorrect URL")
-		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+		return nil, err
 	}
 
-	//Adding request params to url and encoding it.
-	params := url.Values{}
-	params.Set("address", req.Address)
-	params.Set("region", req.Region)
-	params.Set("key", req.APIKey)
-	parsedReqURL.RawQuery = params.Encode()
-
-	log.Infof("Request URL: %s", parsedReqURL.String())
-
-	var resp *http.Response
 	//RunHTTP performs the http.Get under the hood and get's the response from server.
-	resp, err = RunHTTP(parsedReqURL.String())
+	var resp *http.Response
+	resp, err = RunHTTP(reqURL.String())
 	if err != nil {
 		log.Errorf("Failed to get the geocode for location: %s with error => %v\n", req.Address, err.Error())
 		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
@@ -137,5 +117,43 @@ func (c Consumer) GeoCodingAPI(req GeocodeRequest) (geocode *models.Geocode, err
 			Longitude: geocodeResp.GeocodeResults[0].Geometry.Location.Longitude,
 		}
 	}
+	return
+}
+
+//validateGeocodeInputParams validates required request parameters and APIKey.
+func validateGeocodeInputParams(req GeocodeRequest) (err error) {
+	if req.Address == "" {
+		log.Error("Address request parameter missing")
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Address request parameter missing")
+		return AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+
+	if req.APIKey == "" {
+		log.Error("APIKey is missing")
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "APIKey is missing")
+		return AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+	return
+}
+
+func (c Consumer) composeGeocodeReqURL(req GeocodeRequest) (parsedReqURL *url.URL, err error) {
+	reqURL := c.Host + c.Path
+
+	//Parsing the reqURL to convert it to type *url.Url and checking for error if any.
+	parsedReqURL, err = url.Parse(reqURL)
+	if err != nil {
+		log.Error("Incorrect URL:", err.Error())
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Incorrect URL")
+		return nil, AppError{Operation: "GeoCodingAPI", Err: err}
+	}
+
+	//Adding request params to url and encoding it.
+	params := url.Values{}
+	params.Set("address", req.Address)
+	params.Set("region", req.Region)
+	params.Set("key", req.APIKey)
+	parsedReqURL.RawQuery = params.Encode()
+
+	log.Infof("Request URL: %s", parsedReqURL.String())
 	return
 }

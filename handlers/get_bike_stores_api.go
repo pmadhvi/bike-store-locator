@@ -64,6 +64,7 @@ func GetBikeStoresAPI(req *http.Request) (bikeStores models.BikeStores, err erro
 	return
 }
 
+//getGeocodes returns geocode for a location and region
 func getGeocodes(googleAPIHost, location, region string) (geocode *models.Geocode, err error) {
 	//Geocode request parameters
 	geocodeRequest := external.GeocodeRequest{
@@ -83,6 +84,7 @@ func getGeocodes(googleAPIHost, location, region string) (geocode *models.Geocod
 	return
 }
 
+//findPlaces returns list of places
 func findPlaces(googleAPIHost, location string, radius int, lat, lng float64) (storesResp models.BikeStores, err error) {
 	//findPlaceRequest request parameters
 	findPlaceRequest := external.FindPlaceRequest{

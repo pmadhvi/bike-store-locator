@@ -30,7 +30,7 @@ func GetBikeStoresHandler(res http.ResponseWriter, req *http.Request) {
 	respondJSON(res, http.StatusOK, bikeStores)
 }
 
-// respondJSON returns payload in json format
+//respondJSON returns payload in json format
 func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {

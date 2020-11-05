@@ -42,53 +42,22 @@ type Place struct {
 
 //FindPlacesAPI as a method with Consumer as receiver and FindPlaceRequest as parameter and returns response of type FindPlaceResponse and err of type error.
 func (c Consumer) FindPlacesAPI(req FindPlaceRequest) (models.BikeStores, error) {
+
 	//Validating required request parametersand APIKey.
-	if req.Input == "" {
-		log.Error("Input request parameter missing")
-		err := fmt.Errorf("status_code: %d and error_message: %s", 400, "Input request parameter missing")
-		return nil, AppError{Operation: "FindPlaceApi", Err: err}
-	}
-
-	if req.InputType == "" {
-		log.Error("InputType request parameter missing")
-		err := fmt.Errorf("status_code: %d and error_message: %s", 400, "InputType request parameter missing")
-		return nil, AppError{Operation: "FindPlaceApi", Err: err}
-	}
-
-	if req.APIKey == "" {
-		log.Error("APIKey is missing")
-		err := fmt.Errorf("status_code: %d and error_message: %s", 400, "APIKey is missing")
-		return nil, AppError{Operation: "FindPlaceApi", Err: err}
+	err := validateFindPlacesRequestParams(req)
+	if err != nil {
+		return nil, err
 	}
 
 	//Composing reqURL from Host and Path of Consumer struct.
-	reqURL := c.Host + c.Path
-
-	//Parsing the reqURL to convert it to type *url.Url and checking for error if any.
-	parsedReqURL, err := url.Parse(reqURL)
+	reqURL, err := c.composeFindPlacesReqURL(req)
 	if err != nil {
-		log.Error("Incorrect URL:", err.Error())
-		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Incorrect URL")
-		return nil, AppError{Operation: "FindPlaceApi", Err: err}
+		return nil, err
 	}
-
-	//Adding request params to url and encoding it.
-	params := url.Values{}
-	params.Set("input", req.Input)
-	params.Set("inputtype", req.InputType)
-	if len(req.Fields) > 0 {
-		params.Set("fields", strings.Join(req.Fields, ","))
-	}
-	latlng := strconv.FormatFloat(req.LocationBiasLat, 'f', -1, 64) + "," + strconv.FormatFloat(req.LocationBiasLng, 'f', -1, 64)
-	params.Set("locationbias", fmt.Sprintf("circle:%d@%s", req.LocationBiasRadius, latlng))
-	params.Set("key", req.APIKey)
-	parsedReqURL.RawQuery = params.Encode()
-
-	log.Infof("Request URL: %s", parsedReqURL.String())
 
 	var resp *http.Response
 	//RunHTTP performs the http.Get under the hood and get's the response from server.
-	resp, err = RunHTTP(parsedReqURL.String())
+	resp, err = RunHTTP(reqURL.String())
 	if err != nil {
 		log.Errorf("Failed to get places with error => %v\n", err.Error())
 		return nil, AppError{Operation: "FindPlaceApi", Err: err}
@@ -154,4 +123,53 @@ func (c Consumer) FindPlacesAPI(req FindPlaceRequest) (models.BikeStores, error)
 		}
 	}
 	return bikeStores, nil
+}
+
+//validateFindPlacesRequestParams validates required request parameters and APIKey.
+func validateFindPlacesRequestParams(req FindPlaceRequest) (err error) {
+	if req.Input == "" {
+		log.Error("Input request parameter missing")
+		err := fmt.Errorf("status_code: %d and error_message: %s", 400, "Input request parameter missing")
+		return AppError{Operation: "FindPlaceApi", Err: err}
+	}
+
+	if req.InputType == "" {
+		log.Error("InputType request parameter missing")
+		err := fmt.Errorf("status_code: %d and error_message: %s", 400, "InputType request parameter missing")
+		return AppError{Operation: "FindPlaceApi", Err: err}
+	}
+
+	if req.APIKey == "" {
+		log.Error("APIKey is missing")
+		err := fmt.Errorf("status_code: %d and error_message: %s", 400, "APIKey is missing")
+		return AppError{Operation: "FindPlaceApi", Err: err}
+	}
+	return
+}
+
+func (c Consumer) composeFindPlacesReqURL(req FindPlaceRequest) (parsedReqURL *url.URL, err error) {
+	reqURL := c.Host + c.Path
+
+	//Parsing the reqURL to convert it to type *url.Url and checking for error if any.
+	parsedReqURL, err = url.Parse(reqURL)
+	if err != nil {
+		log.Error("Incorrect URL:", err.Error())
+		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Incorrect URL")
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
+	}
+
+	//Adding request params to url and encoding it.
+	params := url.Values{}
+	params.Set("input", req.Input)
+	params.Set("inputtype", req.InputType)
+	if len(req.Fields) > 0 {
+		params.Set("fields", strings.Join(req.Fields, ","))
+	}
+	latlng := strconv.FormatFloat(req.LocationBiasLat, 'f', -1, 64) + "," + strconv.FormatFloat(req.LocationBiasLng, 'f', -1, 64)
+	params.Set("locationbias", fmt.Sprintf("circle:%d@%s", req.LocationBiasRadius, latlng))
+	params.Set("key", req.APIKey)
+	parsedReqURL.RawQuery = params.Encode()
+
+	log.Infof("Request URL: %s", parsedReqURL.String())
+	return
 }
