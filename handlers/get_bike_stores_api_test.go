@@ -1,67 +1,71 @@
 package handlers
 
 import (
+	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
-	"fmt"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetBikeStoresAPI(t *testing.T) {
+	os.Setenv("PORT", "1234")
+	var expected, _ = readResponse("../testdata/bike_stores_response.json")
+
+	//Mock handler for BikeStoresHandler
+	server := getBikeStoresMockhandler()
+	defer server.Close()
+
 	t.Run("returns list of bike stores", func(t *testing.T) {
-		//Create a request for getting list of bike stores
-		req := getBikeRequest("es", "Todelo", 2000)
-		
-		//Create a ResponseRecorder to record the response
-		response := httptest.NewRecorder()
+		res, err := http.Get(server.URL)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		//Call the HealthApi with response and request
-		GetBikeStoresAPI(response, req)
+		stores, err := ioutil.ReadAll(res.Body)
+		res.Body.Close()
 
-		//Check the response status
-		assertResponseStatusCode(t, response.Code, http.StatusOK)
-
-		//Check the response body
-		expected := "Hello World"
-		assertResponseBody(t, response.Body.String(), expected)
+		//Check the response status and response body
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		assert.Equal(t, string(expected), string(stores))
 	})
-
-	// t.Run("test healthapi with wrong url ", func(t *testing.T) {
-	// 	//Create a request for checking the health of the application with wrong url
-	// 	req, err := http.NewRequest("GET", "/bike-locator-api/healthapi", nil)
-	// 	if err != nil {
-	// 		t.Error(err)
-	// 	}
-	// 	//Create a ResponseRecorder to record the response
-	// 	response := httptest.NewRecorder()
-
-	// //call the HealthApi with response and request
-	// 	HealthAPI(response, req)
-
-	// 	//Check the response status
-	// 	assertResponseStatusCode(t, response.Code, http.StatusOK)
-
-	// 	//Check the response body
-	// 	expected := "Application server is up and running!"
-	// 	assertResponseBody(t, response.Body.String(), expected)
-	// })
 }
 
-// func assertResponseBody(t *testing.T, got, want string) {
-// 	t.Helper()
-// 	if got != want {
-// 			t.Errorf("Health Api returning incorrect response, got %q want %q", got, want)
-// 	}
-// }
+func getBikeStoresMockhandler() *httptest.Server {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data, err := readResponse("../testdata/bike_stores_response.json")
+		if err != nil {
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(data))
+	}))
+	return server
+}
 
-// func assertResponseStatusCode(t *testing.T, got, want int) {
-// 	t.Helper()
-// 	if got != want {
-// 			t.Errorf("Health Api returning incorrect status code, got %q want %q", got, want)
-// 	}
-// }
+func readResponse(filepath string) (data []byte, err error) {
+	// filepath: "../testdata/findplaces_response.json"
+	file, err := os.Open(filepath)
+	if err != nil {
+		fmt.Errorf("Unable to open file: %v", err.Error())
+	}
 
-func getBikeRequest(region string, location string, radius int) *http.Request {
-	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/bike-locator-api/region/%s/location/%s/radius/%d", region, location, radius), nil)
+	data, err = ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Errorf("Unable to read the file content: %v", err.Error())
+	}
+	return
+}
+
+func getBikeRequest(region string, location string, radius string) *http.Request {
+	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/bike-locator-api/region/%s/location/%s/radius/%s", region, location, radius), nil)
+
+	//Since gorilla mux is being used for serving the request, that's why we need to set the request params in test using mux.SetURLVars, else request params will be not set and mux.Vars(req) returns map[].
+	req = mux.SetURLVars(req, map[string]string{"region": region, "location": location, "radius": radius})
 	return req
 }

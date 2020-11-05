@@ -1,6 +1,7 @@
 package external_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/pmadhvi/tech-test/bike-locator-api/external"
-	log "github.com/sirupsen/logrus"
 )
 
 var _ = Describe("GeoCodingAPI ", func() {
@@ -107,11 +107,11 @@ func geocodingMockServer() *httptest.Server {
 func geocodeMockApi(res http.ResponseWriter, r *http.Request) {
 	file, err := os.Open("../testdata/geocode_response.json")
 	if err != nil {
-		log.Errorf("Unable to open file: %v", err.Error())
+		fmt.Errorf("Unable to open file: %v", err.Error())
 	}
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.Errorf("Unable to read the file content: %v", err.Error())
+		fmt.Errorf("Unable to read the file content: %v", err.Error())
 	}
 	res.Write(bytes)
 }

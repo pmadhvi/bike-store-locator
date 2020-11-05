@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pmadhvi/tech-test/bike-locator-api/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,23 +41,23 @@ type Place struct {
 }
 
 //FindPlacesAPI as a method with Consumer as receiver and FindPlaceRequest as parameter and returns response of type FindPlaceResponse and err of type error.
-func (c Consumer) FindPlacesAPI(req FindPlaceRequest) (findPlacesResp *FindPlaceResponse, err error) {
+func (c Consumer) FindPlacesAPI(req FindPlaceRequest) (models.BikeStores, error) {
 	//Validating required request parametersand APIKey.
 	if req.Input == "" {
 		log.Error("Input request parameter missing")
-		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "Input request parameter missing")
+		err := fmt.Errorf("status_code: %d and error_message: %s", 400, "Input request parameter missing")
 		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
 	if req.InputType == "" {
 		log.Error("InputType request parameter missing")
-		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "InputType request parameter missing")
+		err := fmt.Errorf("status_code: %d and error_message: %s", 400, "InputType request parameter missing")
 		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
 	if req.APIKey == "" {
 		log.Error("APIKey is missing")
-		err = fmt.Errorf("status_code: %d and error_message: %s", 400, "APIKey is missing")
+		err := fmt.Errorf("status_code: %d and error_message: %s", 400, "APIKey is missing")
 		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
@@ -113,23 +114,44 @@ func (c Consumer) FindPlacesAPI(req FindPlaceRequest) (findPlacesResp *FindPlace
 		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
-	//Decoding the response body to a type GeocodeResponse for further processing.
+	//Decoding the response body to a type FindPlaceResponse for further processing.
+	var findPlacesResp FindPlaceResponse
 	err = json.Unmarshal(respBody, &findPlacesResp)
 	if err != nil {
 		log.Error("Failed to unmarshal the response body with error =>", err.Error())
 		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
+	//TODO: remove these prints
+	fmt.Println("findPlacesResp ====>", findPlacesResp)
+	fmt.Println("findPlacesResp.Places ====>", findPlacesResp.Places)
+
 	//Check if the findPlacesResp.Status is other than "OK" or "ZERO_RESULTS", then the request failed and so log the error message and return
 	if findPlacesResp.Status != "OK" && findPlacesResp.Status != "ZERO_RESULTS" {
 		log.Errorf("Failed to get places with with status: %v", findPlacesResp.Status)
-		return
+
+		message := "Request failed to get places"
+		err = fmt.Errorf("FindPlaceResponse status_code: %v and error_message: %v", findPlacesResp.Status, message)
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
 	if findPlacesResp.Status == "ZERO_RESULTS" {
-		log.Infof("The findPlaces request was successful, but returned no results, due to a non-existent address")
-		return
+		message := "The request was successful, but returned no results, due to a non-existent address"
+		log.Info(message)
+		err = fmt.Errorf("FindPlaceResponse status_code: %v and message: %v", findPlacesResp.Status, message)
+		return nil, AppError{Operation: "FindPlaceApi", Err: err}
 	}
 
-	return
+	//Fetching the response and putting it to a type of models.BikeStores consisting of []model.BikeStore
+	bikeStores := make([]models.BikeStore, len(findPlacesResp.Places))
+
+	if len(findPlacesResp.Places) >= 1 {
+		for i, place := range findPlacesResp.Places {
+			bikeStores[i] = models.BikeStore{
+				StoreName:    place.Name,
+				StoreAddress: place.Address,
+			}
+		}
+	}
+	return bikeStores, nil
 }

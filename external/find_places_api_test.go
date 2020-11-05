@@ -1,6 +1,7 @@
 package external_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/pmadhvi/tech-test/bike-locator-api/external"
-	log "github.com/sirupsen/logrus"
 )
 
 var _ = Describe("FindPlacesAPI", func() {
@@ -47,9 +47,9 @@ var _ = Describe("FindPlacesAPI", func() {
 
 		//Checking the expected response
 		Expect(err).To(BeNil())
-		Expect(findPlaceResp.Status).To(Equal("OK"))
-		Expect(findPlaceResp.Places[0].Address).To(Equal("Toledo, Spain"))
-		Expect(findPlaceResp.Places[0].Name).To(Equal("Museum of Contemporary Art Australia"))
+		Expect(len(findPlaceResp)).To(Equal(1))
+		Expect(findPlaceResp[0].StoreAddress).To(Equal("Toledo, Spain"))
+		Expect(findPlaceResp[0].StoreName).To(Equal("Museum of Contemporary Art Australia"))
 	})
 
 	It("Gets the list of places with empty input", func() {
@@ -113,11 +113,11 @@ func findPlacesMockServer() *httptest.Server {
 func findPlacesMockApi(res http.ResponseWriter, r *http.Request) {
 	file, err := os.Open("../testdata/findplaces_response.json")
 	if err != nil {
-		log.Errorf("Unable to open file: %v", err.Error())
+		fmt.Errorf("Unable to open file: %v", err.Error())
 	}
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.Errorf("Unable to read the file content: %v", err.Error())
+		fmt.Errorf("Unable to read the file content: %v", err.Error())
 	}
 	res.Write(bytes)
 }

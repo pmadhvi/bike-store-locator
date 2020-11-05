@@ -1,0 +1,6 @@
+{
+  "BikeStore": [
+    {"StoreName": "xyz-store", "StoreAddress": "xyz street, stockholm"},
+    {"StoreName": "abc-store", "StoreAddress": "abc street, stockholm"},
+  ]	
+}

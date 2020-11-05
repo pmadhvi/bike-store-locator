@@ -8,7 +8,8 @@ import (
 //Router define handlers based on path
 func Router() *mux.Router {
 	router := mux.NewRouter()
-	router.HandleFunc("/bike-locator-api/healthz", handlers.HealthAPI)
-	router.HandleFunc("/bike-locator-api/region/{region}/location/{location}/radius/{radius}", handlers.GetBikeStoresAPI)
+	router.HandleFunc("/bikestoresapi/health", handlers.HealthHandler)
+	router.HandleFunc("/bikestoresapi/region/{region}/location/{location}/radius/{radius}", handlers.GetBikeStoresHandler)
+	router.HandleFunc("/", handlers.NotFoundHandler)
 	return router
 }

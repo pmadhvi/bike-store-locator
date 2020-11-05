@@ -3,51 +3,49 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/pmadhvi/tech-test/bike-locator-api/external"
 	"github.com/pmadhvi/tech-test/bike-locator-api/models"
 	log "github.com/sirupsen/logrus"
 )
 
 //APIKey for google api
-const APIKey = "XYZ123"
+const (
+	apiKey        = "XYZ123"
+	googleHost    = "https://maps.googleapis.com"
+	localHost     = "http://127.0.0.1"
+	geocodePath   = "/maps/api/geocode/json"
+	findPlacePath = "/maps/api/place/findplacefromtext/json"
+)
 
 //GetBikeStoresAPI returns the list of bike stores(name and address) for location sergeltorg and with radius of 2km.
-func GetBikeStoresAPI(res http.ResponseWriter, req *http.Request) {
-	log.Info("Inside Bike store locator Api!!")
-	fmt.Print(req.URL.Query())
-	fmt.Printf("radios = %v", req.URL.Query().Get("radius"))
+func GetBikeStoresAPI(req *http.Request) (bikeStores models.BikeStores, err error) {
 	//Feteching the quary parameters from url.
-	location := req.URL.Query().Get("location")
-	fmt.Printf("location = %v", req.URL.Query().Get("location"))
-	region := req.URL.Query().Get("region")
-	fmt.Printf("region = %v", req.URL.Query().Get("region"))
-	radius, err := strconv.Atoi(req.URL.Query().Get("radius"))
-	fmt.Println("err ", err) 
-	fmt.Printf("radius = %v\n", radius) 
+	params := mux.Vars(req)
+	//TODO: remove this print
+	fmt.Println("params =>", params)
+	location := params["location"]
+	region := params["region"]
+	radius, err := strconv.Atoi(params["radius"])
 	if err != nil {
 		log.Error("Failed to convert string to integer with error: ", err.Error())
 		return
 	}
-	
 
-	// Defining geocode consumer with Host and Path
-	geocodeConsumer := external.Consumer{Host: "https://maps.googleapis.com", Path: "/maps/api/geocode/json"}
-
-	//Geocode request parameters
-	geocodeRequest := external.GeocodeRequest{
-		Address: location,
-		APIKey:  APIKey,
-		Region:  region,
+	//This is needed just for testing, else test will hit the actual google api
+	var googleAPIHost string
+	if os.Getenv("PORT") == "9000" {
+		log.Info("Hurrey", os.Getenv("PORT"))
+		googleAPIHost = googleHost
+	} else {
+		googleAPIHost = localHost
 	}
 
-	var (
-		geocodeResponse *models.Geocode
-		storesResponse  *external.FindPlaceResponse
-	)
-
-	geocodeResponse, err = geocodeConsumer.GeoCodingAPI(geocodeRequest)
+	//Get the geocode for location and region
+	geocodeResponse, err := getGeocodes(googleAPIHost, location, region)
 	if err != nil {
 		log.Error(err.Error())
 		return
@@ -55,39 +53,55 @@ func GetBikeStoresAPI(res http.ResponseWriter, req *http.Request) {
 	//TODO: Remove print later or convert it to log.
 	fmt.Println("geocodeResponse in bike locator::", geocodeResponse)
 
+	//Get the list of bikes stores
+	storesResponse, err := findPlaces(googleAPIHost, location, radius, geocodeResponse.Latitude, geocodeResponse.Longitude)
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+	//TODO: Remove print later or convert it to log.
+	fmt.Println("storesResponse::", storesResponse)
+	return
+}
+
+func getGeocodes(googleAPIHost, location, region string) (geocode *models.Geocode, err error) {
+	//Geocode request parameters
+	geocodeRequest := external.GeocodeRequest{
+		Address: location,
+		APIKey:  apiKey,
+		Region:  region,
+	}
+
+	//Defining geocode consumer with Host and Path
+	geocodeConsumer := external.Consumer{Host: googleAPIHost, Path: geocodePath}
+
+	//Calling the external GeoCodingAPI which inturns calls google api to get geocode
+	geocode, err = geocodeConsumer.GeoCodingAPI(geocodeRequest)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func findPlaces(googleAPIHost, location string, radius int, lat, lng float64) (storesResp models.BikeStores, err error) {
+	//findPlaceRequest request parameters
 	findPlaceRequest := external.FindPlaceRequest{
 		Input:              location,
 		InputType:          "textquery",
+		APIKey:             apiKey,
 		Fields:             []string{"name, formatted_address"},
 		LocationBiasType:   "circle",
 		LocationBiasRadius: radius,
-		LocationBiasLat:    geocodeResponse.Latitude,
-		LocationBiasLng:    geocodeResponse.Longitude,
+		LocationBiasLat:    lat,
+		LocationBiasLng:    lng,
 	}
 
 	// Defining geocode consumer with Host and Path
-	findPlaceConsumer := external.Consumer{Host: "https://maps.googleapis.com", Path: "maps/api/place/textsearch/json"}
+	findPlaceConsumer := external.Consumer{Host: googleAPIHost, Path: findPlacePath}
 
-	storesResponse, err = findPlaceConsumer.FindPlacesAPI(findPlaceRequest)
+	storesResp, err = findPlaceConsumer.FindPlacesAPI(findPlaceRequest)
 	if err != nil {
-		log.Error("Failed to get the bike stores and error is: ", err.Error())
 		return
 	}
-
-	// //TODO: Remove print later or convert it to log.
-	fmt.Println("storesResponse::", storesResponse)
-
-	// //TODO: Format the response back to models.BikeStore
-
-	// for _, store := range storesResponse {
-	// 	//TODO: run through the list of stores and Format the response back to models.BikeStore
-	// }
-
-	//TODO: return the response back
-	//payload, _ := json.Marshal(storesResponse)
-
-	res.Header().Set("Content-Type", "application/json")
-	res.Write([]byte("Hello World"))
-
 	return
 }
