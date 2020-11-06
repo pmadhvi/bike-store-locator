@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 //HealthHandler returns the health status of the application server.
@@ -19,26 +21,31 @@ func NotFoundHandler(res http.ResponseWriter, req *http.Request) {
 	res.Write([]byte(`{"message": "not found"}`))
 }
 
-//GetBikeStores handler to find the list of bike stores
+//GetBikeStoresHandler handler to find the list of bike stores
 func GetBikeStoresHandler(res http.ResponseWriter, req *http.Request) {
+	log.Info("inside GetBikeStoresHandler!!")
 	res.Header().Set("Content-Type", "application/json")
 	bikeStores, err := GetBikeStoresAPI(req)
 	if err != nil {
-		res.WriteHeader(http.StatusInternalServerError)
-		res.Write([]byte(err.Error()))
+		respondErrorJSON(res, err)
 	}
-	respondJSON(res, http.StatusOK, bikeStores)
+	response, err := json.Marshal(bikeStores)
+	if err != nil {
+		respondErrorJSON(res, err)
+	}
+	respondJSON(res, response)
 }
 
 //respondJSON returns payload in json format
-func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
-	response, err := json.Marshal(payload)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
+func respondJSON(w http.ResponseWriter, response []byte) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	w.Write([]byte(response))
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
+//respondErrorJSON returns error in json format
+func respondErrorJSON(w http.ResponseWriter, err error) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(err.Error()))
 }

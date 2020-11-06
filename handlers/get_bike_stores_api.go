@@ -24,6 +24,7 @@ const (
 
 //GetBikeStoresAPI returns the list of bike stores(name and address) for location sergeltorg and with radius of 2km.
 func GetBikeStoresAPI(req *http.Request) (bikeStores models.BikeStores, err error) {
+	log.Info("Hi Inside GetBikeStoresAPI>>>>>>>")
 	//Feteching the quary parameters from url.
 	params := mux.Vars(req)
 	//TODO: remove this print

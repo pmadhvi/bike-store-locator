@@ -40,19 +40,19 @@ var _ = Describe("TextSearchAPI", func() {
 
 	It("Gets the list of bike stores", func() {
 		//TextSearchAPI being called to test the response.
-		TextSearchResp, err := consumer.TextSearchAPI(TextSearchReq)
+		textSearchResp, err := consumer.TextSearchAPI(TextSearchReq)
 
 		//Checking the expected response
 		Expect(err).To(BeNil())
-		Expect(len(TextSearchResp)).To(Equal(4))
-		Expect(TextSearchResp[0].StoreAddress).To(Equal("Pyrmont Bay Wharf Darling Dr, Sydney"))
-		Expect(TextSearchResp[0].StoreName).To(Equal("Rhythmboat Cruises"))
-		Expect(TextSearchResp[1].StoreAddress).To(Equal("Australia"))
-		Expect(TextSearchResp[1].StoreName).To(Equal("Private Charter Sydney Habour Cruise"))
-		Expect(TextSearchResp[2].StoreAddress).To(Equal("37 Bank St, Pyrmont"))
-		Expect(TextSearchResp[2].StoreName).To(Equal("Bucks Party Cruise"))
-		Expect(TextSearchResp[3].StoreAddress).To(Equal("32 The Promenade, King Street Wharf 5, Sydney"))
-		Expect(TextSearchResp[3].StoreName).To(Equal("Australian Cruise Group"))
+		Expect(len(textSearchResp)).To(Equal(4))
+		Expect(textSearchResp[0].StoreAddress).To(Equal("Pyrmont Bay Wharf Darling Dr, Sydney"))
+		Expect(textSearchResp[0].StoreName).To(Equal("Rhythmboat Cruises"))
+		Expect(textSearchResp[1].StoreAddress).To(Equal("Australia"))
+		Expect(textSearchResp[1].StoreName).To(Equal("Private Charter Sydney Habour Cruise"))
+		Expect(textSearchResp[2].StoreAddress).To(Equal("37 Bank St, Pyrmont"))
+		Expect(textSearchResp[2].StoreName).To(Equal("Bucks Party Cruise"))
+		Expect(textSearchResp[3].StoreAddress).To(Equal("32 The Promenade, King Street Wharf 5, Sydney"))
+		Expect(textSearchResp[3].StoreName).To(Equal("Australian Cruise Group"))
 	})
 
 	It("Gets the list of bike stores with empty query", func() {
@@ -60,11 +60,11 @@ var _ = Describe("TextSearchAPI", func() {
 		TextSearchReq.Query = ""
 
 		//TextSearchAPI being called to test the response.
-		TextSearchResp, err := consumer.TextSearchAPI(TextSearchReq)
+		textSearchResp, err := consumer.TextSearchAPI(TextSearchReq)
 
 		//Checking the expected response
 		Expect(err).ToNot(BeNil())
-		Expect(TextSearchResp).To(BeNil())
+		Expect(textSearchResp).To(BeNil())
 	})
 
 	It("Gets the list of bike stores with empty APIKey", func() {
@@ -72,11 +72,11 @@ var _ = Describe("TextSearchAPI", func() {
 		TextSearchReq.APIKey = ""
 
 		//TextSearchAPI being called to test the response.
-		TextSearchResp, err := consumer.TextSearchAPI(TextSearchReq)
+		textSearchResp, err := consumer.TextSearchAPI(TextSearchReq)
 
 		//Checking the expected response
 		Expect(err).ToNot(BeNil())
-		Expect(TextSearchResp).To(BeNil())
+		Expect(textSearchResp).To(BeNil())
 	})
 
 	It("Gets the list of places for an incorrect url", func() {
@@ -84,11 +84,11 @@ var _ = Describe("TextSearchAPI", func() {
 		consumer = Consumer{Host: server.URL, Path: "/maps/api/places/xxxx"}
 
 		//TextSearchAPI being called to test the response.
-		TextSearchResp, err := consumer.TextSearchAPI(TextSearchReq)
+		textSearchResp, err := consumer.TextSearchAPI(TextSearchReq)
 
 		//Checking the expected response
 		Expect(err).ToNot(BeNil())
-		Expect(TextSearchResp).To(BeNil())
+		Expect(textSearchResp).To(BeNil())
 	})
 })
 
