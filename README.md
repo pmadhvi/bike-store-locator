@@ -58,7 +58,7 @@ The URLS the application supports :
     go test -v ./...
 ```
 
-**NOTE** Issue with certificates in docker comtainer
+**NOTE** Issue with certificates in docker container
 * To build the Bike store locator using Dockerfile:
 ```bash
     docker build -t bikelocator
@@ -69,7 +69,7 @@ The application does not runs through docker, getting error :
 ```
 Error in TextSearchApi with error details => Get "https://maps.googleapis.com/maps/api/place/textsearch/json?key=AIzaSyAUeAoC5FJvYiSwS2sVBXxRMU1ojQMicwU&query=bicycle_store+near+Sergeltorg&radius=2000&region=se&type=bicycle_store": x509: certificate signed by unknown authority null
 ```
-I have installed the ca-certificates and openssl, but still it fails. 
+I have installed the ca-certificates and openssl, but still it fails.
 
 ## Developer Documentation
 
