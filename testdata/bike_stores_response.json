@@ -1,6 +1,11 @@
 {
-  "BikeStore": [
-    {"StoreName": "xyz-store", "StoreAddress": "xyz street, stockholm"},
-    {"StoreName": "abc-store", "StoreAddress": "abc street, stockholm"},
+  "BikeStores": [
+    {
+      "BikeStore":
+        {"StoreName": "EttEttSex Bike Shop", "StoreAddress": "Östgötagatan 16, 116 25 Stockholm"},
+        {"StoreName": "Urban Bike Wear AB", "StoreAddress": "Tjärhovsgatan 14, 116 21 Stockholm"},
+        {"StoreName": "By Bike", "StoreAddress": "Formvägen 10B, 906 21 Umeå"}
+    
+    }
   ]	
 }

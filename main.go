@@ -16,6 +16,7 @@ func main() {
 
 	os.Setenv("PORT", "9000")
 	port := os.Getenv("PORT")
+	
 	//Checking for any error while listening for request on port 9000
 	if err := http.ListenAndServe(fmt.Sprint(":", port), nil); err != nil {
 		log.Fatal("Bike Locator Api crashed with error => ", err.Error())
