@@ -9,6 +9,7 @@ import (
 
 //HealthHandler returns the health status of the application server.
 func HealthHandler(res http.ResponseWriter, req *http.Request) {
+	log.Info("HealthHandler!!")
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusOK)
 	res.Write([]byte(`{"message": "alive"}`))
@@ -16,6 +17,7 @@ func HealthHandler(res http.ResponseWriter, req *http.Request) {
 
 //NotFoundHandler is for handling invalid url path
 func NotFoundHandler(res http.ResponseWriter, req *http.Request) {
+	log.Info("NotFoundHandler!!")
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusNotFound)
 	res.Write([]byte(`{"message": "not found"}`))
@@ -23,12 +25,14 @@ func NotFoundHandler(res http.ResponseWriter, req *http.Request) {
 
 //GetBikeStoresHandler handler to find the list of bike stores
 func GetBikeStoresHandler(res http.ResponseWriter, req *http.Request) {
-	log.Info("inside GetBikeStoresHandler!!")
+	log.Info("GetBikeStoresHandler!!")
 	res.Header().Set("Content-Type", "application/json")
+	//Get the list of bike stores
 	bikeStores, err := GetBikeStoresAPI(req)
 	if err != nil {
 		respondErrorJSON(res, err)
 	}
+	//Converting from models.BikeStores to json format
 	response, err := json.Marshal(bikeStores)
 	if err != nil {
 		respondErrorJSON(res, err)
@@ -40,7 +44,7 @@ func GetBikeStoresHandler(res http.ResponseWriter, req *http.Request) {
 func respondJSON(w http.ResponseWriter, response []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	w.Write([]byte(response))
 }
 
 //respondErrorJSON returns error in json format

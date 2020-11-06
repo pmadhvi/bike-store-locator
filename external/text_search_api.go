@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	storeCache     = cache.New(5*time.Minute, 30*time.Second)
+	storeCache     = cache.New(5*time.Minute, 2*time.Minute)
 	textSearchResp TextSearchResponse
 )
 
@@ -86,9 +86,6 @@ func (c Consumer) TextSearchAPI(req TextSearchRequest) (bikeStores models.BikeSt
 			return nil, AppError{Operation: "TextSearchApi", Err: err}
 		}
 
-		//TODO: remove these prints
-		fmt.Println("textSearchResp ====>", textSearchResp)
-
 		//validate the textSearchResp status
 		err = validatesTextSearchResponseStatus(textSearchResp)
 		if err != nil {
@@ -110,7 +107,6 @@ func (c Consumer) TextSearchAPI(req TextSearchRequest) (bikeStores models.BikeSt
 			log.Error("Bikestores data did not cached")
 		}
 	}
-
 	return bikeStores, nil
 }
 

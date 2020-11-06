@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -11,9 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//APIKey for google api
 const (
-	apiKey         = "XYZ123"
+	apiKey         = "AIzaSyAUeAoC5FJvYiSwS2sVBXxRMU1ojQMicwU"
 	query          = "bicycle_store near Sergeltorg"
 	placeType      = "bicycle_store"
 	googleHost     = "https://maps.googleapis.com"
@@ -24,11 +22,8 @@ const (
 
 //GetBikeStoresAPI returns the list of bike stores(name and address) for location sergeltorg and with radius of 2km.
 func GetBikeStoresAPI(req *http.Request) (bikeStores models.BikeStores, err error) {
-	log.Info("Hi Inside GetBikeStoresAPI>>>>>>>")
 	//Feteching the quary parameters from url.
 	params := mux.Vars(req)
-	//TODO: remove this print
-	fmt.Println("params =>", params)
 	radius := params["radius"]
 
 	//This is needed just for testing, else test will hit the actual google api
@@ -41,13 +36,12 @@ func GetBikeStoresAPI(req *http.Request) (bikeStores models.BikeStores, err erro
 	}
 
 	//Get the list of bikes stores
-	storesResponse, err := findBikeStores(googleAPIHost, radius)
+	bikeStores, err = findBikeStores(googleAPIHost, radius)
 	if err != nil {
 		log.Error(err.Error())
 		return
 	}
-	//TODO: Remove print later or convert it to log.
-	fmt.Println("storesResponse::", storesResponse)
+
 	return
 }
 
