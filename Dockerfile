@@ -1,6 +1,13 @@
 # Start from the latest golang alpine base image
 FROM golang:1.14.3-alpine AS builder
 
+#installing ca-certificates
+RUN apk update \
+        && apk upgrade \
+        && apk add --no-cache \
+        ca-certificates openssl\
+        && update-ca-certificates 2>/dev/null || true
+
 # Set the Current Working Directory inside the container
 WORKDIR /app
 

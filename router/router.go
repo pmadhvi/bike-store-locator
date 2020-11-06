@@ -10,6 +10,5 @@ func Router() *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/bikestoresapi/health", handlers.HealthHandler)
 	router.HandleFunc("/bikestoresapi/radius/{radius}", handlers.GetBikeStoresHandler)
-	router.HandleFunc("/", handlers.NotFoundHandler)
 	return router
 }
