@@ -9,12 +9,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetBikeStoresAPI(t *testing.T) {
-	os.Setenv("PORT", "1234")
+	//os.Setenv("PORT", "1234")
 	var expected, _ = readResponse("../testdata/bike_stores_response.json")
 
 	t.Run("returns list of bike stores with correct input and request url", func(t *testing.T) {
@@ -115,10 +114,10 @@ func readResponse(filepath string) (data []byte, err error) {
 }
 
 //getBikeRequest helps to create a request url with radius
-func getBikeRequest(radius string) *http.Request {
-	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/bikestoresapi/radius/%s", radius), nil)
+// func getBikeRequest(radius string) *http.Request {
+// 	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/bikestoresapi/radius/%s", radius), nil)
 
-	//Since gorilla mux is being used for serving the request, that's why we need to set the request params in test using mux.SetURLVars, else request params will be not set and mux.Vars(req) returns map[].
-	req = mux.SetURLVars(req, map[string]string{"radius": radius})
-	return req
-}
+// 	//Since gorilla mux is being used for serving the request, that's why we need to set the request params in test using mux.SetURLVars, else request params will be not set and mux.Vars(req) returns map[].
+// 	//req = mux.SetURLVars(req, map[string]string{"radius": radius})
+// 	return req
+// }

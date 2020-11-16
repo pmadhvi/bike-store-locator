@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/pmadhvi/tech-test/bike-locator-api/external"
@@ -27,16 +26,16 @@ func GetBikeStoresAPI(req *http.Request) (bikeStores models.BikeStores, err erro
 	radius := params["radius"]
 
 	//This is needed just for testing, else test will hit the actual google api
-	var googleAPIHost string
-	if os.Getenv("PORT") == "9000" {
-		log.Info("Hurrey", os.Getenv("PORT"))
-		googleAPIHost = googleHost
-	} else {
-		googleAPIHost = localHost
-	}
+	// var googleAPIHost string
+	// if os.Getenv("PORT") == "9000" {
+	// 	log.Info("Hurrey", os.Getenv("PORT"))
+	// 	googleAPIHost = googleHost
+	// } else {
+	// 	googleAPIHost = localHost
+	// }
 
 	//Get the list of bikes stores
-	bikeStores, err = findBikeStores(googleAPIHost, radius)
+	bikeStores, err = findBikeStores(googleHost, radius)
 	if err != nil {
 		log.Error(err.Error())
 		return
