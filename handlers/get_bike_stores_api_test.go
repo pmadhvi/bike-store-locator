@@ -112,12 +112,3 @@ func readResponse(filepath string) (data []byte, err error) {
 	}
 	return
 }
-
-//getBikeRequest helps to create a request url with radius
-// func getBikeRequest(radius string) *http.Request {
-// 	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/bikestoresapi/radius/%s", radius), nil)
-
-// 	//Since gorilla mux is being used for serving the request, that's why we need to set the request params in test using mux.SetURLVars, else request params will be not set and mux.Vars(req) returns map[].
-// 	//req = mux.SetURLVars(req, map[string]string{"radius": radius})
-// 	return req
-// }

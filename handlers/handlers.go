@@ -31,11 +31,13 @@ func GetBikeStoresHandler(res http.ResponseWriter, req *http.Request) {
 	bikeStores, err := GetBikeStoresAPI(req)
 	if err != nil {
 		respondErrorJSON(res, err)
+		return
 	}
 	//Converting from models.BikeStores to json format
 	response, err := json.Marshal(bikeStores)
 	if err != nil {
 		respondErrorJSON(res, err)
+		return
 	}
 	respondJSON(res, response)
 }

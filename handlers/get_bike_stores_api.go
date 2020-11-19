@@ -25,15 +25,6 @@ func GetBikeStoresAPI(req *http.Request) (bikeStores models.BikeStores, err erro
 	params := mux.Vars(req)
 	radius := params["radius"]
 
-	//This is needed just for testing, else test will hit the actual google api
-	// var googleAPIHost string
-	// if os.Getenv("PORT") == "9000" {
-	// 	log.Info("Hurrey", os.Getenv("PORT"))
-	// 	googleAPIHost = googleHost
-	// } else {
-	// 	googleAPIHost = localHost
-	// }
-
 	//Get the list of bikes stores
 	bikeStores, err = findBikeStores(googleHost, radius)
 	if err != nil {
