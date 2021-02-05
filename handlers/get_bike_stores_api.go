@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	apiKey         = "AIzaSyAUeAoC5FJvYiSwS2sVBXxRMU1ojQMicwU"
+	apiKey         = "AIzaSyCIkeRRD02JxTZZIRzXn-eLsgBRUulICok"
 	query          = "bicycle_store near Sergeltorg"
 	placeType      = "bicycle_store"
 	googleHost     = "https://maps.googleapis.com"

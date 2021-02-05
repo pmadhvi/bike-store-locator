@@ -1,3 +1,29 @@
+// Package classification  BikeStoreLocator API.
+//
+// Swagger URL: http://localhost:9000/swaggerui/
+//
+// Terms Of Service:
+//
+//     Schemes: http, https
+//     Host: localhost:8080
+//     Version: 1.0.0
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Security:
+//     - api_key:
+//
+//     SecurityDefinitions:
+//     api_key:
+//          type: apiKey
+//          name: KEY
+//          in: header
+//
+// swagger:meta
 package main
 
 import (

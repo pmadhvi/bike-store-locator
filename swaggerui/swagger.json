@@ -1,0 +1,144 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "title": "BikeStoreLocator API",
+    "version": "1.0.0"
+  },
+  "host": "localhost:9000",
+  "paths": {
+    "/bikestoresapi/health": {
+      "get": {
+        "description": "Returns the helath of the api",
+        "summary": "Returns the helath of the api.",
+        "operationId": "HealthApi",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/healthRes"
+          },
+          "400": {
+            "$ref": "#/responses/badReq"
+          },
+          "404": {
+            "$ref": "#/responses/notFoundReq"
+          }
+        }
+      }
+    },
+    "/bikestoresapi/radius/{radius}": {
+      "get": {
+        "description": "Returns the list of bike stores with the radius.",
+        "summary": "Returns the list of bike stores with the radius.",
+        "operationId": "GetBikeStoreApi",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int64",
+            "description": "radius of the area to look into",
+            "name": "radius",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/bikeStoresRes"
+          },
+          "400": {
+            "$ref": "#/responses/badReq"
+          },
+          "404": {
+            "$ref": "#/responses/notFoundReq"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BikeStore": {
+      "description": "BikeStore struct",
+      "type": "object",
+      "properties": {
+        "store_address": {
+          "type": "string"
+        },
+        "store_name": {
+          "type": "string"
+        }
+      }
+    },
+    "BikeStores": {
+      "description": "BikeStores list of BikeStore",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/BikeStore"
+      }
+    }
+  },
+  "responses": {
+    "badReq": {
+      "description": "Error Bad Request",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "description": "HTTP status code 400 -  Bad Request",
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      }
+    },
+    "bikeStoresRes": {
+      "description": "BikeStores response payload",
+      "schema": {
+        "$ref": "#/definitions/BikeStores"
+      }
+    },
+    "healthRes": {
+      "description": "Health response payload",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notFoundReq": {
+      "description": "Error Not Found",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "description": "HTTP status code 404 -  Not Found",
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "KEY",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "api_key": []
+    }
+  ]
+}
